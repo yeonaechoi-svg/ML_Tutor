@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}2단계 — 기계학습 유형 판별{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">2단계 — 아이디어 구상 및 문제 정의</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'주제 선정'),(2,'유형 판별'),(3,'문제 정의서')] %}
+        <div style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid;
+            {% if i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% elif i == 2 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed %}✓ {% endif %}{{ label }}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if idea and idea.topic %}
+    <div class="info-box" style="margin-bottom:20px;">
+        <strong>선정한 주제:</strong> {{ idea.topic }}
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <h3 class="section-title">스텝 2 — 기계학습 유형 판별</h3>
+        <p>주제를 결정했다면, 이제 <strong>어떤 기계학습 유형</strong>이 적합한지 스스로 판별해봅니다. 아래 세 가지 질문을 순서대로 따라가세요.</p>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">유형 판별 흐름도</h3>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="background:#f8fafc; border-radius:10px; padding:16px; border-left:4px solid #6366F1;">
+                <div style="font-size:13px; font-weight:700; color:#4F46E5; margin-bottom:6px;">질문 1. 정답(레이블)이 있는 데이터인가요?</div>
+                <div style="display:flex; gap:16px; font-size:13px; color:#374151;">
+                    <span>→ <strong>예</strong>: 지도학습 (회귀 또는 분류)</span>
+                    <span>→ <strong>아니오</strong>: 비지도학습 → <strong style="color:#f59e0b;">군집</strong></span>
+                </div>
+            </div>
+            <div style="background:#f8fafc; border-radius:10px; padding:16px; border-left:4px solid #6366F1;">
+                <div style="font-size:13px; font-weight:700; color:#4F46E5; margin-bottom:6px;">질문 2. (지도학습이라면) 예측하려는 값이 수치인가요, 카테고리인가요?</div>
+                <div style="display:flex; gap:16px; font-size:13px; color:#374151;">
+                    <span>→ <strong>수치</strong> (얼마?, 몇 개?): <strong style="color:#6366F1;">회귀</strong></span>
+                    <span>→ <strong>카테고리</strong> (어느 종류?): <strong style="color:#10b981;">분류</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px;">
+            {% for color, border, title, desc, ex in [
+                ('#eef2ff','#6366F1','📈 회귀 (Regression)','출력이 연속적인 수치','가격 예측, 온도 예측, 판매량 예측'),
+                ('#f0fdf4','#10b981','🏷️ 분류 (Classification)','출력이 정해진 카테고리','스팸/정상, 등급 판별, 위험도 분류'),
+                ('#fffbeb','#f59e0b','🔵 군집 (Clustering)','정답 없이 유사한 것끼리 그룹','고객 세분화, 지역 군집화')
+            ] %}
+            <div style="background:{{ color }}; border:2px solid {{ border }}; border-radius:10px; padding:14px;">
+                <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:6px;">{{ title }}</div>
+                <div style="font-size:12px; color:#475569; margin-bottom:8px;">{{ desc }}</div>
+                <div style="font-size:11px; color:#64748b;">예) {{ ex }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">나의 프로젝트 유형 선택</h3>
+        {% if already_completed %}
+        <div class="info-box">
+            <strong>선택한 유형:</strong>
+            {% if idea.ml_type == 'regression' %}📈 회귀 (Regression)
+            {% elif idea.ml_type == 'classification' %}🏷️ 분류 (Classification)
+            {% elif idea.ml_type == 'clustering' %}🔵 군집 (Clustering)
+            {% endif %}<br>
+            <strong>선택 이유:</strong> {{ idea.ml_reason }}<br>
+            <span style="font-size:12px; color:#64748b; margin-top:4px; display:block;">이미 완료한 단계입니다.</span>
+        </div>
+        {% else %}
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;" id="ml-type-selector">
+            {% for val, icon, label, desc in [
+                ('regression',      '📈', '회귀 (Regression)',       '예측값이 연속적인 수치일 때'),
+                ('classification',  '🏷️', '분류 (Classification)',   '예측값이 정해진 카테고리일 때'),
+                ('clustering',      '🔵', '군집 (Clustering)',       '정답 없이 유사한 그룹을 찾을 때')
+            ] %}
+            <label style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:2px solid #e2e8f0; border-radius:10px; cursor:pointer; transition:all 0.15s;"
+                   id="label_{{ val }}"
+                   onmouseover="this.style.borderColor='#a5b4fc'"
+                   onmouseout="if(!document.getElementById('type_{{ val }}').checked) this.style.borderColor='#e2e8f0'">
+                <input type="radio" name="ml_type_ui" id="type_{{ val }}" value="{{ val }}"
+                       style="accent-color:#6366F1;"
+                       onchange="selectType('{{ val }}')">
+                <span style="font-size:18px;">{{ icon }}</span>
+                <div>
+                    <div style="font-size:14px; font-weight:700; color:#1e293b;">{{ label }}</div>
+                    <div style="font-size:12px; color:#64748b;">{{ desc }}</div>
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="ml_reason_input">선택 이유를 작성해보세요</label>
+            <textarea class="form-control" id="ml_reason_input" rows="3"
+                      placeholder="예: 자전거 대여량은 1, 2, 3...과 같은 수치이므로 회귀가 적합합니다."></textarea>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- AI 체크포인트 -->
+    <div class="checkpoint-box">
+        <div class="checkpoint-title">AI 체크포인트 — 유형 판별 확인</div>
+        <div class="checkpoint-question">{{ "선택한 기계학습 유형에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 왜 이 유형(회귀/분류/군집)을 선택했나요? 출력값의 형태(수치/카테고리/그룹)를 중심으로 설명해보세요.\n2. 다른 유형은 왜 적합하지 않은지 이유를 들어 설명해보세요." }}</div>
+
+        {% if already_completed %}
+        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage2_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+            <a href="{{ url_for('student.stage2_step', step=3) }}" class="btn btn-primary">다음: 문제 정의서 →</a>
+        </div>
+        {% else %}
+        <textarea id="answer_2_2" class="form-control" rows="4"
+                  placeholder="여기에 답변을 작성해주세요..."></textarea>
+        <div style="margin-top:12px;">
+            <button id="cp_s2s2_btn" class="btn btn-success"
+                    onclick="submitCheckpoint(2, 2, 'cp_s2s2_btn', 'cp_s2s2_feedback', 'cp_s2s2_next')">
+                제출하기
+            </button>
+        </div>
+        <div id="cp_s2s2_feedback" class="checkpoint-feedback"></div>
+        <form method="POST" id="stage2_step2_form">
+            <input type="hidden" name="ml_type" id="ml_type_hidden">
+            <input type="hidden" name="ml_reason" id="ml_reason_hidden">
+            <div class="step-nav" style="margin-top:16px;">
+                <a href="{{ url_for('student.stage2_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+                <button type="submit" id="cp_s2s2_next" class="btn btn-primary" disabled>다음: 문제 정의서 →</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function selectType(val) {
+    ['regression','classification','clustering'].forEach(v => {
+        document.getElementById('label_' + v).style.borderColor = (v === val) ? '#6366F1' : '#e2e8f0';
+        document.getElementById('label_' + v).style.background  = (v === val) ? '#eef2ff' : '';
+    });
+}
+document.getElementById('stage2_step2_form')?.addEventListener('submit', function() {
+    const checked = document.querySelector('input[name="ml_type_ui"]:checked');
+    document.getElementById('ml_type_hidden').value   = checked ? checked.value : '';
+    document.getElementById('ml_reason_hidden').value = document.getElementById('ml_reason_input').value;
+});
+</script>
+{% endblock %}

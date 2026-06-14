@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from app.student import student_bp
-from app.models import Progress, QuizResult
+from app.models import Progress, QuizResult, ProjectIdea
 from app import db
 from datetime import datetime
 
@@ -215,4 +215,66 @@ def stage1_quiz():
         questions=QUIZ_QUESTIONS,
         completed=completed,
         existing_result=existing_result
+    )
+
+
+# ── 2단계: 아이디어 구상 및 문제 정의 ──
+
+@student_bp.route('/stage2')
+@login_required
+def stage2():
+    completed = get_completed_substeps(2)
+    if not completed:
+        return redirect(url_for('student.stage2_step', step=1))
+    next_step = min(max(completed) + 1, 3)
+    return redirect(url_for('student.stage2_step', step=next_step))
+
+
+@student_bp.route('/stage2/step/<int:step>', methods=['GET', 'POST'])
+@login_required
+def stage2_step(step):
+    if step not in range(1, 4):
+        return redirect(url_for('student.stage2_step', step=1))
+
+    completed = get_completed_substeps(2)
+    idea = ProjectIdea.query.filter_by(user_id=current_user.id).first()
+
+    if request.method == 'POST':
+        try:
+            if not idea:
+                idea = ProjectIdea(user_id=current_user.id)
+                db.session.add(idea)
+
+            if step == 1:
+                idea.topic = request.form.get('topic', '').strip()
+            elif step == 2:
+                idea.ml_type = request.form.get('ml_type', '')
+                idea.ml_reason = request.form.get('ml_reason', '').strip()
+            elif step == 3:
+                idea.problem_statement = request.form.get('problem_statement', '').strip()
+                idea.input_data = request.form.get('input_data', '').strip()
+                idea.output_target = request.form.get('output_target', '').strip()
+
+            save_progress(2, step)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        if step < 3:
+            return redirect(url_for('student.stage2_step', step=step + 1))
+        flash('2단계를 완료했습니다! 수고했어요.', 'success')
+        return redirect(url_for('student.dashboard'))
+
+    template_map = {
+        1: 'student/stage2/step1.html',
+        2: 'student/stage2/step2.html',
+        3: 'student/stage2/step3.html',
+    }
+
+    return render_template(
+        template_map[step],
+        step=step,
+        completed=completed,
+        already_completed=(step in completed),
+        idea=idea
     )

@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}2단계 — 주제 선정{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">2단계 — 아이디어 구상 및 문제 정의</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'주제 선정'),(2,'유형 판별'),(3,'문제 정의서')] %}
+        <div style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid;
+            {% if i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% elif i == 1 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed %}✓ {% endif %}{{ label }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">스텝 1 — 주제 선정</h3>
+        <p>기계학습으로 해결하고 싶은 <strong>사회 문제나 궁금한 현상</strong>을 주제로 선정합니다. 좋은 주제는 데이터로 측정할 수 있고, 예측하거나 분류할 명확한 목표가 있습니다.</p>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">좋은 주제의 조건</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div style="background:#f0fdf4; border-radius:10px; padding:14px; border-left:3px solid #10b981;">
+                <div style="font-size:12px; font-weight:700; color:#059669; margin-bottom:8px;">✅ 좋은 주제</div>
+                <ul style="font-size:13px; color:#374151; line-height:2; padding-left:16px;">
+                    <li>데이터로 측정 가능한 것</li>
+                    <li>예측/분류/군집 목표가 명확한 것</li>
+                    <li>공공데이터로 수집 가능한 것</li>
+                    <li>사회적으로 유용한 것</li>
+                </ul>
+            </div>
+            <div style="background:#fef2f2; border-radius:10px; padding:14px; border-left:3px solid #ef4444;">
+                <div style="font-size:12px; font-weight:700; color:#dc2626; margin-bottom:8px;">❌ 피해야 할 주제</div>
+                <ul style="font-size:13px; color:#374151; line-height:2; padding-left:16px;">
+                    <li>데이터 수집이 불가능한 것</li>
+                    <li>결과가 너무 주관적인 것</li>
+                    <li>이미 정해진 답이 있는 것</li>
+                    <li>범위가 너무 넓은 것</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">주제 예시</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            {% for ex in [
+                '학교 급식 잔반량 예측',
+                '대기질(미세먼지)에 따른 야외활동 위험도 분류',
+                '지역별 편의점 매출 예측',
+                '교통사고 심각도 분류',
+                '아파트 전세가격 예측',
+                '온라인 쇼핑몰 고객 군집 분석',
+                '날씨에 따른 자전거 대여량 예측',
+                '학생 성적 예측'
+            ] %}
+            <span style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; border-radius:20px; padding:5px 14px; font-size:13px; cursor:pointer;"
+                  onclick="document.getElementById('topic').value='{{ ex }}'">
+                {{ ex }}
+            </span>
+            {% endfor %}
+        </div>
+        <p style="font-size:12px; color:#94a3b8; margin-top:8px;">예시를 클릭하면 입력창에 자동 입력됩니다.</p>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">나의 주제 입력</h3>
+        {% if already_completed %}
+        <div class="info-box">
+            <strong>선정한 주제:</strong> {{ idea.topic if idea else '' }}
+            <br><span style="font-size:12px; color:#64748b; margin-top:4px; display:block;">이미 완료한 단계입니다.</span>
+        </div>
+        {% else %}
+        <div class="form-group">
+            <label class="form-label" for="topic">주제를 입력하세요</label>
+            <input class="form-control" type="text" id="topic" name="topic_preview"
+                   placeholder="예: 날씨에 따른 자전거 대여량 예측"
+                   value="{{ idea.topic if idea else '' }}">
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- AI 체크포인트 -->
+    <div class="checkpoint-box">
+        <div class="checkpoint-title">AI 체크포인트 — 주제 적합성 확인</div>
+        <div class="checkpoint-question">{{ "선택한 주제에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 이 주제에서 기계학습으로 해결하려는 문제가 무엇인지 한 문장으로 설명해보세요.\n2. 이 문제를 기계학습으로 해결하면 어떤 점이 유용한가요?" }}</div>
+
+        {% if already_completed %}
+        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
+        <div class="step-nav">
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary">← 학습 현황</a>
+            <a href="{{ url_for('student.stage2_step', step=2) }}" class="btn btn-primary">다음: 유형 판별 →</a>
+        </div>
+        {% else %}
+        <textarea id="answer_2_1" class="form-control" rows="4"
+                  placeholder="여기에 답변을 작성해주세요..."></textarea>
+        <div style="margin-top:12px;">
+            <button id="cp_s2s1_btn" class="btn btn-success"
+                    onclick="submitCheckpoint(2, 1, 'cp_s2s1_btn', 'cp_s2s1_feedback', 'cp_s2s1_next')">
+                제출하기
+            </button>
+        </div>
+        <div id="cp_s2s1_feedback" class="checkpoint-feedback"></div>
+        <form method="POST" id="stage2_step1_form">
+            <input type="hidden" name="topic" id="topic_hidden">
+            <div class="step-nav" style="margin-top:16px;">
+                <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary">← 학습 현황</a>
+                <button type="submit" id="cp_s2s1_next" class="btn btn-primary" disabled>다음: 유형 판별 →</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('stage2_step1_form')?.addEventListener('submit', function() {
+    document.getElementById('topic_hidden').value = document.getElementById('topic').value;
+});
+</script>
+{% endblock %}

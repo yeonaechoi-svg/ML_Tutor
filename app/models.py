@@ -96,6 +96,22 @@ class PeerReview(db.Model):
     reviewee = db.relationship('User', foreign_keys=[reviewee_id], backref='reviews_received')
 
 
+class ProjectIdea(db.Model):
+    __tablename__ = 'project_ideas'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
+    topic = db.Column(db.String(200))
+    problem_statement = db.Column(db.Text)
+    input_data = db.Column(db.String(500))
+    output_target = db.Column(db.String(200))
+    ml_type = db.Column(db.String(50))           # regression / classification / clustering
+    ml_reason = db.Column(db.Text)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('project_idea', uselist=False))
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))

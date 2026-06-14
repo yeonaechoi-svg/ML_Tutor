@@ -42,7 +42,7 @@ def create_app():
             return dict(nav_current_stage=None, nav_completed_stages=set())
         from app.models import Progress
         # 단계 완료 기준: 해당 단계의 마지막 서브스텝 완료 여부
-        stage_last_substep = {1: 7}
+        stage_last_substep = {1: 7, 2: 3}
         completed_stages = set()
         for stage, last_sub in stage_last_substep.items():
             p = Progress.query.filter_by(

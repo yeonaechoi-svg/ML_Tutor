@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}2단계 — 문제 정의서{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">2단계 — 아이디어 구상 및 문제 정의</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'주제 선정'),(2,'유형 판별'),(3,'문제 정의서')] %}
+        <div style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid;
+            {% if i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% elif i == 3 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed %}✓ {% endif %}{{ label }}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if idea %}
+    <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+        <div class="info-box" style="flex:1; min-width:200px;">
+            <strong>주제:</strong> {{ idea.topic or '미입력' }}
+        </div>
+        <div class="info-box" style="flex:0 0 auto;">
+            <strong>유형:</strong>
+            {% if idea.ml_type == 'regression' %}📈 회귀
+            {% elif idea.ml_type == 'classification' %}🏷️ 분류
+            {% elif idea.ml_type == 'clustering' %}🔵 군집
+            {% else %}미선택{% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <h3 class="section-title">스텝 3 — 문제 정의서 작성</h3>
+        <p>지금까지 선정한 주제와 기계학습 유형을 바탕으로 <strong>문제 정의서</strong>를 작성합니다. 입력 데이터(X)와 출력 목표(y)를 구체적으로 정리하면 3단계 데이터 수집이 훨씬 쉬워집니다.</p>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">입력(X)과 출력(y) 이해하기</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+            <div style="background:#eef2ff; border-radius:10px; padding:14px; border-left:3px solid #6366F1;">
+                <div style="font-size:12px; font-weight:700; color:#4F46E5; margin-bottom:6px;">입력 데이터 X (특성, Feature)</div>
+                <div style="font-size:13px; color:#374151; line-height:1.8;">
+                    모델이 학습에 사용하는 속성들<br>
+                    <span style="color:#64748b;">예: 날씨, 기온, 요일, 계절</span>
+                </div>
+            </div>
+            <div style="background:#f0fdf4; border-radius:10px; padding:14px; border-left:3px solid #10b981;">
+                <div style="font-size:12px; font-weight:700; color:#059669; margin-bottom:6px;">출력 목표 y (레이블, Label)</div>
+                <div style="font-size:13px; color:#374151; line-height:1.8;">
+                    모델이 예측해야 할 값<br>
+                    <span style="color:#64748b;">예: 자전거 대여량(개)</span>
+                </div>
+            </div>
+        </div>
+        <div class="warning-box">
+            <strong>확인하세요!</strong> 선택한 유형과 출력 목표가 일치하는지 확인하세요.<br>
+            회귀 → 출력이 수치 &nbsp;|&nbsp; 분류 → 출력이 카테고리 &nbsp;|&nbsp; 군집 → 출력 없음(그룹 자동 생성)
+        </div>
+    </div>
+
+    {% if already_completed %}
+    <div class="section">
+        <h3 class="section-title">작성한 문제 정의서</h3>
+        <div style="background:#f8fafc; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:14px;">
+            {% for label, value in [
+                ('해결하려는 문제', idea.problem_statement),
+                ('입력 데이터 (X)', idea.input_data),
+                ('출력 목표 (y)',   idea.output_target)
+            ] %}
+            <div style="border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
+                <div style="font-size:12px; font-weight:700; color:#6366F1; margin-bottom:4px;">{{ label }}</div>
+                <div style="font-size:14px; color:#1e293b;">{{ value or '미입력' }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="checkpoint-box">
+        <div class="checkpoint-title">AI 체크포인트 — 문제 정의 확인</div>
+        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 수고했어요!</div>
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage2_step', step=2) }}" class="btn btn-secondary">← 이전</a>
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-success">학습 현황으로 →</a>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="section">
+        <h3 class="section-title">문제 정의서 작성</h3>
+        <div class="form-group">
+            <label class="form-label" for="problem_statement">해결하려는 문제</label>
+            <textarea class="form-control" id="problem_statement" rows="3"
+                      placeholder="예: 날씨(기온, 습도, 강수량)와 요일 데이터를 이용하여 자전거 일일 대여량을 예측한다.">{{ idea.problem_statement if idea else '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="input_data">입력 데이터 (X) — 어떤 데이터를 사용할 건가요?</label>
+            <input class="form-control" type="text" id="input_data"
+                   placeholder="예: 기온(°C), 습도(%), 강수량(mm), 요일, 계절"
+                   value="{{ idea.input_data if idea else '' }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="output_target">출력 목표 (y) — 무엇을 예측/분류할 건가요?</label>
+            <input class="form-control" type="text" id="output_target"
+                   placeholder="예: 자전거 일일 대여량 (단위: 개)"
+                   value="{{ idea.output_target if idea else '' }}">
+        </div>
+    </div>
+
+    <!-- AI 체크포인트 -->
+    <div class="checkpoint-box">
+        <div class="checkpoint-title">AI 체크포인트 — 문제 정의 확인</div>
+        <div class="checkpoint-question">{{ "작성한 문제 정의서에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 입력 데이터(X)와 출력 목표(y)가 선택한 기계학습 유형과 일치하는지 확인해보세요.\n2. 이 데이터를 실제로 어떻게 수집할 수 있을지 방법을 생각해보세요." }}</div>
+        <textarea id="answer_2_3" class="form-control" rows="4"
+                  placeholder="여기에 답변을 작성해주세요..."></textarea>
+        <div style="margin-top:12px;">
+            <button id="cp_s2s3_btn" class="btn btn-success"
+                    onclick="submitCheckpoint(2, 3, 'cp_s2s3_btn', 'cp_s2s3_feedback', 'cp_s2s3_next')">
+                제출하기
+            </button>
+        </div>
+        <div id="cp_s2s3_feedback" class="checkpoint-feedback"></div>
+        <form method="POST" id="stage2_step3_form">
+            <input type="hidden" name="problem_statement" id="ps_hidden">
+            <input type="hidden" name="input_data" id="id_hidden">
+            <input type="hidden" name="output_target" id="ot_hidden">
+            <div class="step-nav" style="margin-top:16px;">
+                <a href="{{ url_for('student.stage2_step', step=2) }}" class="btn btn-secondary">← 이전</a>
+                <button type="submit" id="cp_s2s3_next" class="btn btn-primary" disabled>2단계 완료 →</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('stage2_step3_form')?.addEventListener('submit', function() {
+    document.getElementById('ps_hidden').value = document.getElementById('problem_statement').value;
+    document.getElementById('id_hidden').value = document.getElementById('input_data').value;
+    document.getElementById('ot_hidden').value = document.getElementById('output_target').value;
+});
+</script>
+{% endblock %}
