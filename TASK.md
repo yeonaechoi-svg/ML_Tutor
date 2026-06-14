@@ -1,214 +1,445 @@
-# 작업지시서 v2 — ML Tutor 단계 수정 및 1단계 콘텐츠 보강
+# 작업지시서 v3 — AI 튜터 대화형 구조로 변경
 
 > 반드시 CLAUDE.md를 먼저 읽고 프로젝트 맥락을 파악한 뒤 작업하세요.
-> 기존 코드의 구조와 틀을 최대한 유지하면서 수정합니다.
+> 기존 코드 구조를 최대한 유지하면서 수정합니다.
 
 ---
 
-## 작업 1. 7단계 구성 변경
+## 문제 정의
 
-### 변경 내용
-기존 7단계 구성을 아래와 같이 수정한다.
+현재 AI 튜터는 아래 흐름으로 동작한다.
 
 ```
-1단계  기계학습 개념과 유형 — 사전학습
-2단계  아이디어 구상 및 문제 정의
-3단계  데이터 탐색과 전처리
-4단계  기계학습 유형과 알고리즘 선정
-5단계  기계학습을 통한 모델 생성
-6단계  성능평가, 모델 정확도 확인 및 테스트 데이터를 이용한 예측
-7단계  자기평가 및 동료 평가
+학생 답변 제출
+    ↓
+AI 피드백 1회 표시
+    ↓
+textarea 비활성화 + 제출 버튼 숨김  ← 문제!
+    ↓
+끝 (대화 불가)
 ```
 
-### 수정 파일 목록
-- app/student/routes.py — 단계명 및 라우트 수정
-- app/templates/student/dashboard.html — 단계 목록 표시 수정
-- app/ai_tutor/prompts.py — 단계별 체크포인트 키 확인 및 수정
+피드백을 받고 나서 대화를 이어갈 수 없어 스캐폴딩이 제대로 작동하지 않는다.
+학생이 AI 피드백을 읽고 추가 답변을 입력할 수 있어야 하고,
+AI는 이전 대화 맥락을 유지하면서 이어서 피드백을 줘야 한다.
 
 ---
 
-## 작업 2. 1단계 콘텐츠 보강 [핵심 작업]
+## 목표 흐름
 
-### 원칙
-- 기존 페이지 틀(base.html 상속, CSS 클래스, 카드 구조) 유지
-- 각 스텝에 알고리즘 설명 섹션만 추가
-- 교과서(2022 정보 교과서 4단원) 내용 기반으로 작성
-
----
-
-### 작업 2-1. step4.html 수정 — 지도학습: 회귀 + 선형 회귀 알고리즘
-
-**현재**: 회귀 개념만 있음
-**추가할 내용**: 선형 회귀 알고리즘 설명 섹션
-
-추가할 섹션 내용:
 ```
-[선형 회귀 알고리즘]
-개념: 데이터를 가장 잘 설명하는 직선(y = ax + b)을 찾는 알고리즘
-     독립 변수(X)와 종속 변수(y) 사이의 선형 관계를 학습
-
-핵심 개념:
-- 독립 변수(X): 예측에 사용하는 입력 속성 (예: 엔진 크기, 연료 소비량)
-- 종속 변수(y): 예측하려는 목표 속성 (예: CO₂ 배출량)
-- 회귀선: 데이터 포인트들과의 오차를 최소화하는 직선
-
-교과서 예시:
-- 자동차 엔진 크기, 연료 소비량 → CO₂ 배출량(g/km) 예측
-- 기온 → 아이스크림 매출 예측
-
-scikit-learn 라이브러리 사용:
-from sklearn.linear_model import LinearRegression
-
-언제 사용?
-→ 예측값이 연속적인 수치일 때
-→ 입력과 출력 사이에 선형 관계가 있을 때
+[AI 체크포인트 질문 표시]
+    ↓
+학생이 답변 입력 → 제출
+    ↓
+AI 피드백 표시 (대화창에 누적)
+    ↓
+학생이 추가 답변 입력 가능 (textarea 유지)
+    ↓
+AI가 이전 대화 맥락을 포함해서 이어서 피드백
+    ↓
+(반복 — 학생이 충분히 이해할 때까지)
+    ↓
+"이해했습니다" 버튼 클릭 → 다음 단계로 이동
 ```
 
 ---
 
-### 작업 2-2. step5.html 수정 — 지도학습: 분류 + 3가지 알고리즘
+## 작업 1. ChatLog 모델 수정 (models.py)
 
-**현재**: 분류 개념만 있음
-**추가할 내용**: 의사결정 트리, 랜덤 포레스트, KNN 알고리즘 설명 섹션
-
-추가할 섹션 내용:
-
-```
-[① 의사결정 트리 알고리즘 (Decision Tree)]
-개념: 데이터를 특정 기준으로 반복적으로 분류하는 트리 구조 알고리즘
-     질문을 통해 데이터를 점점 좁혀가는 방식
-
-동작 원리:
-- 루트 노드: 가장 중요한 속성으로 첫 번째 분류
-- 가지: 각 조건에 따라 데이터 분기
-- 리프 노드: 최종 분류 결과
-교과서 예시: 날씨 → 운동 여부 결정 트리
-
-장점: 결과를 이해하기 쉽고 시각화 가능
-단점: 데이터가 복잡하면 과적합(Overfitting) 발생 가능
-
-scikit-learn: from sklearn.tree import DecisionTreeClassifier
-
----
-
-[② 랜덤 포레스트 알고리즘 (Random Forest)]
-개념: 여러 개의 의사결정 트리를 만들어 다수결로 최종 결과를 결정하는 앙상블 알고리즘
-
-동작 원리:
-- 여러 개의 의사결정 트리를 독립적으로 학습
-- 각 트리의 예측 결과를 모아 가장 많은 결과를 최종 선택
-- "여러 전문가의 의견을 모아 결정"하는 방식
-
-장점: 의사결정 트리보다 정확도 높음, 과적합 방지
-단점: 계산 시간이 더 오래 걸림
-
-scikit-learn: from sklearn.ensemble import RandomForestClassifier
-
----
-
-[③ K-최근접 이웃 알고리즘 (KNN)]
-개념: 새로운 데이터와 가장 가까운 K개의 이웃 데이터를 보고 분류하는 알고리즘
-
-동작 원리:
-- 새 데이터 주변 K개의 데이터 탐색
-- K개 중 가장 많은 클래스로 분류
-- K값에 따라 결과가 달라짐 (K=3이면 가장 가까운 3개 참고)
-
-교과서 예시: 새 학생 데이터 → 주변 3명의 성적 등급 참고 → 등급 예측
-
-장점: 구현이 간단하고 직관적
-단점: K값 선정이 중요, 데이터가 많으면 속도 느림
-
-scikit-learn: from sklearn.neighbors import KNeighborsClassifier
-```
-
----
-
-### 작업 2-3. step6.html 수정 — 비지도학습: 군집 + K-평균 알고리즘
-
-**현재**: 군집 개념만 있음
-**추가할 내용**: K-평균 알고리즘 설명 섹션
-
-추가할 섹션 내용:
-
-```
-[K-평균 알고리즘 (K-Means)]
-개념: 데이터를 K개의 군집으로 나누는 알고리즘
-     각 군집의 중심점(centroid)까지의 거리를 최소화
-
-동작 원리 (교과서 그림 참고):
-① K개의 임의의 중심점 설정
-② 각 데이터를 가장 가까운 중심점의 군집으로 배정
-③ 각 군집의 새로운 중심점 계산
-④ 중심점이 변하지 않을 때까지 ②~③ 반복
-
-교과서 예시:
-- 편의점 위도/경도 데이터 → 2개 군집으로 자동 분류
-- 고객 구매 패턴 → 유사한 고객 그룹 자동 발견
-
-K값의 중요성:
-- K=2: 2개 그룹으로 나눔
-- K=3: 3개 그룹으로 나눔
-- K값에 따라 군집 결과가 완전히 달라짐
-→ 적절한 K값 선택이 핵심!
-
-scikit-learn: from sklearn.cluster import KMeans
-
-지도학습과의 차이:
-→ 정답 레이블 없이 스스로 그룹을 찾는다
-→ 어떤 그룹이 만들어질지 미리 알 수 없다
-```
-
----
-
-### 작업 2-4. AI 체크포인트 추가 (prompts.py)
-
-step4, step5, step6에 알고리즘 설명이 추가되므로 체크포인트 질문도 추가한다.
+현재 ChatLog는 단일 질문-답변-피드백을 저장한다.
+대화형으로 변경하기 위해 대화 세션 개념을 추가한다.
 
 ```python
-# step4 (회귀 + 선형회귀) 후 체크포인트
-(1, 4): {
-    'question': (
-        "다음 두 가지 질문에 답해보세요.\n\n"
-        "1. 회귀 문제와 분류 문제의 차이를 설명하고, "
-        "선형 회귀가 적합한 상황의 예시를 들어보세요.\n"
-        "2. 선형 회귀에서 독립 변수(X)와 종속 변수(y)의 "
-        "역할을 자신의 말로 설명해보세요."
-    ),
-    'context': "학생은 지도학습 회귀 개념과 선형 회귀 알고리즘을 학습했습니다."
-},
+class ChatLog(db.Model):
+    __tablename__ = 'chat_logs'
 
-# step5 (분류 + 3가지 알고리즘) 후 체크포인트
-(1, 5): {
-    'question': (
-        "다음 두 가지 질문에 답해보세요.\n\n"
-        "1. 의사결정 트리, 랜덤 포레스트, KNN 중 하나를 선택하고 "
-        "그 알고리즘의 동작 원리를 자신의 말로 설명해보세요.\n"
-        "2. 랜덤 포레스트가 의사결정 트리보다 정확도가 높은 이유는 무엇인가요?"
-    ),
-    'context': "학생은 지도학습 분류 개념과 의사결정 트리, 랜덤 포레스트, KNN 알고리즘을 학습했습니다."
-},
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    stage = db.Column(db.Integer, nullable=False)
+    substep = db.Column(db.Integer, nullable=False)
+    session_id = db.Column(db.String(50), nullable=False)  # 추가: 대화 세션 구분
+    role = db.Column(db.String(10), nullable=False)        # 추가: 'user' 또는 'assistant'
+    content = db.Column(db.Text, nullable=False)           # 추가: 대화 내용
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+```
 
-# step6 (군집 + K-평균) 후 체크포인트
-(1, 6): {
-    'question': (
-        "다음 두 가지 질문에 답해보세요.\n\n"
-        "1. K-평균 알고리즘의 동작 원리를 단계별로 설명해보세요.\n"
-        "2. K-평균 군집이 지도학습의 분류와 다른 점은 무엇인가요?"
-    ),
-    'context': "학생은 비지도학습 군집 개념과 K-평균 알고리즘을 학습했습니다."
-},
+기존 question, answer, feedback 컬럼 대신
+role + content 구조로 변경하여 대화 히스토리를 순서대로 저장한다.
+
+session_id는 같은 체크포인트 내의 대화를 묶는 키로 사용한다.
+형식: f"{user_id}_{stage}_{substep}"
+
+---
+
+## 작업 2. AI 튜터 라우트 수정 (app/ai_tutor/routes.py)
+
+### 2-1. 기존 /checkpoint 엔드포인트 수정
+
+대화 히스토리를 DB에서 불러와 Claude API에 전달하도록 수정한다.
+
+```python
+@ai_tutor_bp.route('/checkpoint', methods=['POST'])
+@login_required
+def checkpoint():
+    data = request.get_json()
+    stage = data.get('stage')
+    substep = data.get('substep')
+    student_answer = data.get('student_answer', '').strip()
+
+    if not stage or not substep or not student_answer:
+        return jsonify({'error': '필수 항목이 누락되었습니다.'}), 400
+
+    cp = get_checkpoint(stage, substep)
+    if not cp:
+        return jsonify({'error': '해당 체크포인트를 찾을 수 없습니다.'}), 404
+
+    session_id = f"{current_user.id}_{stage}_{substep}"
+
+    # 1. 기존 대화 히스토리 불러오기
+    history = ChatLog.query.filter_by(
+        user_id=current_user.id,
+        stage=stage,
+        substep=substep,
+        session_id=session_id
+    ).order_by(ChatLog.created_at.asc()).all()
+
+    # 2. Claude API messages 배열 구성
+    messages = []
+
+    # 첫 번째 대화라면 체크포인트 질문을 첫 user 메시지로 포함
+    if not history:
+        context = cp.get('context', '')
+        question = cp['question']
+        first_message = (
+            f"[학습 맥락]\n{context}\n\n"
+            f"[체크포인트 질문]\n{question}\n\n"
+            f"[학생 첫 번째 답변]\n{student_answer}"
+        )
+        messages.append({'role': 'user', 'content': first_message})
+    else:
+        # 기존 대화 히스토리 복원
+        for log in history:
+            messages.append({'role': log.role, 'content': log.content})
+        # 새 학생 답변 추가
+        messages.append({'role': 'user', 'content': student_answer})
+
+    # 3. Claude API 호출
+    try:
+        client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
+        response = client.messages.create(
+            model='claude-sonnet-4-6',
+            max_tokens=1000,
+            system=SYSTEM_PROMPT,
+            messages=messages
+        )
+        feedback = response.content[0].text
+    except Exception as e:
+        return jsonify({'error': 'AI 튜터에 연결할 수 없습니다.'}), 500
+
+    # 4. 대화 내용 DB 저장 (학생 답변 + AI 피드백)
+    try:
+        # 첫 대화면 초기 질문도 저장
+        if not history:
+            db.session.add(ChatLog(
+                user_id=current_user.id,
+                stage=stage, substep=substep,
+                session_id=session_id,
+                role='user',
+                content=messages[0]['content']
+            ))
+        else:
+            db.session.add(ChatLog(
+                user_id=current_user.id,
+                stage=stage, substep=substep,
+                session_id=session_id,
+                role='user',
+                content=student_answer
+            ))
+        db.session.add(ChatLog(
+            user_id=current_user.id,
+            stage=stage, substep=substep,
+            session_id=session_id,
+            role='assistant',
+            content=feedback
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    return jsonify({'feedback': feedback})
+```
+
+### 2-2. 대화 히스토리 조회 엔드포인트 추가
+
+페이지 새로고침 시 기존 대화 내용을 복원하기 위한 API 추가.
+
+```python
+@ai_tutor_bp.route('/history', methods=['GET'])
+@login_required
+def history():
+    stage = request.args.get('stage', type=int)
+    substep = request.args.get('substep', type=int)
+    session_id = f"{current_user.id}_{stage}_{substep}"
+
+    logs = ChatLog.query.filter_by(
+        user_id=current_user.id,
+        stage=stage,
+        substep=substep,
+        session_id=session_id
+    ).order_by(ChatLog.created_at.asc()).all()
+
+    return jsonify({
+        'history': [
+            {'role': log.role, 'content': log.content}
+            for log in logs
+        ]
+    })
 ```
 
 ---
 
-## 작업 3. GitHub에 커밋 및 푸시
+## 작업 3. 프론트엔드 수정 (app/static/js/main.js)
 
-모든 수정 완료 후 아래 명령어로 GitHub에 반영한다.
+기존 submitCheckpoint 함수를 대화형으로 완전히 교체한다.
+
+### 3-1. 대화창 초기화 함수 추가
+
+```javascript
+// 페이지 로드 시 기존 대화 히스토리 복원
+function loadChatHistory(stage, substep, chatBoxId) {
+    fetch('/ai-tutor/history?stage=' + stage + '&substep=' + substep)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.history && data.history.length > 0) {
+            data.history.forEach(function(msg) {
+                if (msg.role === 'assistant') {
+                    appendFeedback(chatBoxId, msg.content);
+                } else {
+                    // user 메시지는 표시하지 않음 (질문이 이미 표시됨)
+                }
+            });
+            // 이미 대화한 경우 "이해했습니다" 버튼 활성화
+            var completeBtn = document.getElementById('complete_' + stage + '_' + substep);
+            if (completeBtn) completeBtn.style.display = 'inline-block';
+        }
+    });
+}
+```
+
+### 3-2. submitCheckpoint 함수 교체
+
+```javascript
+function submitCheckpoint(stage, substep, btnId, chatBoxId, nextBtnId) {
+    var textarea = document.getElementById('answer_' + stage + '_' + substep);
+    var answer = textarea ? textarea.value.trim() : '';
+
+    if (!answer) {
+        alert('답변을 입력해주세요.');
+        return;
+    }
+
+    var btn = document.getElementById(btnId);
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> AI 튜터가 피드백을 작성 중입니다...';
+
+    fetch('/ai-tutor/checkpoint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: stage, substep: substep, student_answer: answer })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.feedback) {
+            // 대화창에 피드백 누적 표시
+            appendFeedback(chatBoxId, data.feedback);
+
+            // textarea 초기화 (재입력 가능)
+            textarea.value = '';
+            textarea.disabled = false;
+            textarea.placeholder = 'AI 튜터의 피드백을 읽고 추가 답변을 입력하세요...';
+            textarea.focus();
+
+            // 제출 버튼 복원
+            btn.disabled = false;
+            btn.innerHTML = '추가 답변 제출';
+
+            // "이해했습니다" 버튼 표시
+            var completeBtn = document.getElementById('complete_' + stage + '_' + substep);
+            if (completeBtn) completeBtn.style.display = 'inline-block';
+
+        } else {
+            alert(data.error || 'AI 튜터 오류가 발생했습니다.');
+            btn.disabled = false;
+            btn.innerHTML = '제출하기';
+        }
+    })
+    .catch(function() {
+        alert('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
+        btn.disabled = false;
+        btn.innerHTML = '제출하기';
+    });
+}
+
+// 피드백을 대화창에 누적 표시
+function appendFeedback(chatBoxId, content) {
+    var chatBox = document.getElementById(chatBoxId);
+    if (!chatBox) return;
+
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble assistant';
+    bubble.textContent = content;
+    chatBox.appendChild(bubble);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// "이해했습니다" 버튼 클릭 → 다음 단계 활성화
+function completeCheckpoint(stage, substep, nextBtnId) {
+    var nextBtn = document.getElementById(nextBtnId);
+    if (nextBtn) {
+        nextBtn.disabled = false;
+        nextBtn.style.display = 'inline-block';
+    }
+    // textarea와 제출 버튼 비활성화
+    var textarea = document.getElementById('answer_' + stage + '_' + substep);
+    var submitBtn = document.getElementById('submit_' + stage + '_' + substep);
+    if (textarea) textarea.disabled = true;
+    if (submitBtn) submitBtn.style.display = 'none';
+
+    var completeBtn = document.getElementById('complete_' + stage + '_' + substep);
+    if (completeBtn) completeBtn.style.display = 'none';
+}
+```
+
+---
+
+## 작업 4. HTML 템플릿 수정
+
+체크포인트가 있는 모든 step HTML 파일의 체크포인트 섹션을 아래 구조로 교체한다.
+(step2.html 예시 — 나머지 step도 동일한 패턴 적용)
+
+```html
+<!-- AI 체크포인트 -->
+<div class="checkpoint-box">
+    <div class="checkpoint-title">AI 체크포인트</div>
+    <div class="checkpoint-question">{{ 질문 내용 }}</div>
+
+    {% if already_completed %}
+        <div class="chat-box" id="chat_1_2"></div>
+        <div class="checkpoint-feedback visible">이미 완료한 단계입니다.</div>
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage1_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+            <a href="{{ url_for('student.stage1_step', step=3) }}" class="btn btn-primary">다음 →</a>
+        </div>
+    {% else %}
+        <!-- 대화창 (피드백 누적 표시) -->
+        <div class="chat-box" id="chat_1_2"></div>
+
+        <!-- 답변 입력 -->
+        <textarea
+            id="answer_1_2"
+            class="form-control"
+            rows="4"
+            placeholder="여기에 답변을 작성해주세요...">
+        </textarea>
+
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <!-- 제출 버튼 -->
+            <button
+                id="submit_1_2"
+                class="btn btn-success"
+                onclick="submitCheckpoint(1, 2, 'submit_1_2', 'chat_1_2', 'next_1_2')">
+                제출하기
+            </button>
+
+            <!-- 이해했습니다 버튼 (첫 제출 후 표시) -->
+            <button
+                id="complete_1_2"
+                class="btn btn-secondary"
+                style="display:none"
+                onclick="completeCheckpoint(1, 2, 'next_1_2')">
+                ✓ 이해했습니다
+            </button>
+        </div>
+
+        <form method="POST" id="form_1_2">
+            <div class="step-nav" style="margin-top:16px;">
+                <a href="{{ url_for('student.stage1_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+                <button
+                    type="submit"
+                    id="next_1_2"
+                    class="btn btn-primary"
+                    disabled
+                    style="display:none">
+                    다음: 기계학습 유형 →
+                </button>
+            </div>
+        </form>
+
+        <!-- 페이지 로드 시 기존 대화 복원 -->
+        <script>
+            loadChatHistory(1, 2, 'chat_1_2');
+        </script>
+    {% endif %}
+</div>
+```
+
+---
+
+## 작업 5. CSS 추가 (app/static/css/main.css)
+
+대화창 스타일을 추가한다.
+
+```css
+/* 대화창 */
+.chat-box {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* AI 피드백 말풍선 */
+.chat-bubble.assistant {
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    border-radius: 12px 12px 12px 2px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #1e3a5f;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    max-width: 90%;
+}
+```
+
+---
+
+## 작업 6. DB 마이그레이션
+
+ChatLog 모델이 변경되므로 기존 DB를 삭제하고 새로 생성한다.
+
+```bash
+# instance 폴더의 DB 파일 삭제
+del instance\ml_tutor.db
+
+# 서버 재실행 시 새 구조로 자동 생성
+python run.py
+```
+
+---
+
+## 작업 7. GitHub 커밋 및 푸시
 
 ```bash
 git add .
-git commit -m "1단계 알고리즘 설명 추가 및 7단계 구성 수정"
+git commit -m "AI 튜터 대화형 구조로 변경 — 멀티턴 대화 지원"
 git push origin master
 ```
 
@@ -216,11 +447,9 @@ git push origin master
 
 ## 완료 기준
 
-- [ ] 7단계 이름이 수정안과 일치
-- [ ] step4.html에 선형 회귀 알고리즘 설명 섹션 추가
-- [ ] step5.html에 의사결정 트리 / 랜덤 포레스트 / KNN 설명 섹션 추가
-- [ ] step6.html에 K-평균 알고리즘 설명 섹션 추가
-- [ ] 기존 페이지 틀(CSS, 카드 구조) 유지 확인
-- [ ] AI 체크포인트 질문 업데이트
+- [ ] 체크포인트에서 AI 피드백 후 textarea가 초기화되어 추가 입력 가능
+- [ ] 대화창에 피드백이 누적 표시됨
+- [ ] AI가 이전 대화 맥락을 포함하여 이어서 피드백 제공
+- [ ] "이해했습니다" 버튼 클릭 후 다음 단계 버튼 활성화
+- [ ] 페이지 새로고침 후 기존 대화 내용 복원
 - [ ] python run.py 실행 후 오류 없이 동작 확인
-- [ ] 1단계 step1 → step6 → 퀴즈 전체 흐름 완주 확인
