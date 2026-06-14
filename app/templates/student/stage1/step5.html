@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}실습 B — 분류{% endblock %}
+{% block title %}지도학습 — 분류{% endblock %}
 
 {% block content %}
 {% include 'student/stage1/_progress.html' %}
 
 <div class="card">
-    <h2 class="card-title">스텝 5 — 실습 B: 학생 성적 등급 분류</h2>
+    <h2 class="card-title">스텝 5 — 지도학습: 분류 + 분류 알고리즘</h2>
 
     <div class="section">
         <h3 class="section-title">문제 정의</h3>
@@ -67,10 +67,89 @@ print(classification_report(y_test, y_pred))</pre>
         </div>
     </div>
 
+    <!-- 랜덤 포레스트 알고리즘 설명 -->
+    <div class="section">
+        <h3 class="section-title">② 랜덤 포레스트 알고리즘 (Random Forest)</h3>
+        <p style="margin-bottom:14px;">여러 개의 의사결정 트리를 만들어 <strong>다수결로 최종 결과를 결정</strong>하는 앙상블(Ensemble) 알고리즘입니다. "여러 전문가의 의견을 모아 결정"하는 방식입니다.</p>
+
+        <div style="background:#f8fafc; border-radius:10px; padding:16px; margin-bottom:14px; font-size:13px; color:#374151; line-height:1.9;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; font-weight:700; color:#1e293b;">동작 원리</div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <div style="background:#eef2ff; border-radius:8px; padding:10px 14px; text-align:center; min-width:110px;">
+                    <div style="font-size:20px;">🌳</div>
+                    <div style="font-size:12px; font-weight:600; color:#4F46E5; margin-top:4px;">트리 1<br>예측: A</div>
+                </div>
+                <div style="color:#94a3b8; font-size:20px;">+</div>
+                <div style="background:#eef2ff; border-radius:8px; padding:10px 14px; text-align:center; min-width:110px;">
+                    <div style="font-size:20px;">🌳</div>
+                    <div style="font-size:12px; font-weight:600; color:#4F46E5; margin-top:4px;">트리 2<br>예측: A</div>
+                </div>
+                <div style="color:#94a3b8; font-size:20px;">+</div>
+                <div style="background:#eef2ff; border-radius:8px; padding:10px 14px; text-align:center; min-width:110px;">
+                    <div style="font-size:20px;">🌳</div>
+                    <div style="font-size:12px; font-weight:600; color:#4F46E5; margin-top:4px;">트리 3<br>예측: B</div>
+                </div>
+                <div style="color:#94a3b8; font-size:20px;">→</div>
+                <div style="background:#f0fdf4; border:2px solid #10b981; border-radius:8px; padding:10px 14px; text-align:center; min-width:110px;">
+                    <div style="font-size:20px;">🏆</div>
+                    <div style="font-size:12px; font-weight:700; color:#059669; margin-top:4px;">최종 결과: <strong>A</strong><br>(다수결)</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div style="background:#f0fdf4; border-radius:8px; padding:12px;">
+                <div style="font-size:12px; font-weight:700; color:#059669; margin-bottom:4px;">✅ 장점</div>
+                <div style="font-size:13px; color:#374151;">의사결정 트리보다 정확도 높음<br>과적합(Overfitting) 방지</div>
+            </div>
+            <div style="background:#fef2f2; border-radius:8px; padding:12px;">
+                <div style="font-size:12px; font-weight:700; color:#dc2626; margin-bottom:4px;">⚠️ 단점</div>
+                <div style="font-size:13px; color:#374151;">계산 시간이 더 오래 걸림<br>결과 해석이 상대적으로 복잡</div>
+            </div>
+        </div>
+        <div style="font-size:13px; color:#64748b; background:#f8fafc; border-radius:8px; padding:10px 14px;">
+            <code style="color:#4F46E5; font-weight:600;">from sklearn.ensemble import RandomForestClassifier</code>
+        </div>
+    </div>
+
+    <!-- KNN 알고리즘 설명 -->
+    <div class="section">
+        <h3 class="section-title">③ K-최근접 이웃 알고리즘 (KNN)</h3>
+        <p style="margin-bottom:14px;">새로운 데이터와 <strong>가장 가까운 K개의 이웃 데이터</strong>를 보고 분류하는 알고리즘입니다. K개 중 가장 많은 클래스로 분류합니다.</p>
+
+        <div style="background:#fffbeb; border-radius:10px; padding:16px; margin-bottom:14px;">
+            <div style="font-size:13px; font-weight:700; color:#92400e; margin-bottom:10px;">K=3일 때 동작 원리 예시</div>
+            <div style="font-size:13px; color:#374151; line-height:2;">
+                새 학생 데이터 입력<br>
+                → 주변 <strong>3명</strong>의 데이터 탐색<br>
+                → 3명 중 A등급 2명 / B등급 1명<br>
+                → 최종 예측: <strong style="color:#059669;">A등급</strong> (다수결)
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>K값 선택의 중요성:</strong> K가 너무 작으면 이상치에 민감하고, 너무 크면 경계가 흐릿해집니다. 보통 홀수를 사용합니다 (동점 방지).
+        </div>
+
+        <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div style="background:#f0fdf4; border-radius:8px; padding:12px;">
+                <div style="font-size:12px; font-weight:700; color:#059669; margin-bottom:4px;">✅ 장점</div>
+                <div style="font-size:13px; color:#374151;">구현이 간단하고 직관적<br>학습 과정이 따로 없음</div>
+            </div>
+            <div style="background:#fef2f2; border-radius:8px; padding:12px;">
+                <div style="font-size:12px; font-weight:700; color:#dc2626; margin-bottom:4px;">⚠️ 단점</div>
+                <div style="font-size:13px; color:#374151;">K값 선정이 중요<br>데이터가 많으면 속도 느림</div>
+            </div>
+        </div>
+        <div style="font-size:13px; color:#64748b; background:#f8fafc; border-radius:8px; padding:10px 14px;">
+            <code style="color:#4F46E5; font-weight:600;">from sklearn.neighbors import KNeighborsClassifier</code>
+        </div>
+    </div>
+
     <!-- AI 체크포인트 4 -->
     <div class="checkpoint-box">
         <div class="checkpoint-title">AI 체크포인트 4</div>
-        <div class="checkpoint-question">{{ "분류(Classification) 실습 코드를 보고 다음 두 가지 질문에 답해보세요.\n\n1. 분류 모델에서 정확도(Accuracy)가 의미하는 것을 설명해보세요.\n2. 코드에서 X와 y를 나누는 이유는 무엇인가요?" }}</div>
+        <div class="checkpoint-question">{{ "다음 두 가지 질문에 답해보세요.\n\n1. 의사결정 트리, 랜덤 포레스트, KNN 중 하나를 선택하고 그 알고리즘의 동작 원리를 자신의 말로 설명해보세요.\n2. 랜덤 포레스트가 의사결정 트리보다 정확도가 높은 이유는 무엇인가요?" }}</div>
 
         {% if already_completed %}
         <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
