@@ -143,19 +143,25 @@ plt.show()</pre>
             <a href="{{ url_for('student.stage1_quiz') }}" class="btn btn-primary">다음: 이해 확인 퀴즈 →</a>
         </div>
         {% else %}
+        <div class="chat-box" id="chat_1_6"></div>
         <textarea id="answer_1_6" class="form-control" rows="5"
                   placeholder="여기에 답변을 작성해주세요..."></textarea>
-        <div style="margin-top:12px;">
-            <button id="cp5_btn" class="btn btn-success" onclick="submitCheckpoint(1, 6, 'cp5_btn', 'cp5_feedback', 'cp5_next')">제출하기</button>
+        <div style="margin-top:12px; display:flex; gap:8px;">
+            <button id="submit_1_6" class="btn btn-success"
+                    onclick="submitCheckpoint(1, 6, 'submit_1_6', 'chat_1_6', 'next_1_6')">제출하기</button>
+            <button id="complete_1_6" class="btn btn-primary" style="display:none"
+                    onclick="completeCheckpoint(1, 6, 'next_1_6')">✓ 이해했습니다</button>
         </div>
-        <div id="cp5_feedback" class="checkpoint-feedback"></div>
         <form method="POST">
             <div class="step-nav" style="margin-top:16px;">
                 <a href="{{ url_for('student.stage1_step', step=5) }}" class="btn btn-secondary">← 이전</a>
-                <button type="submit" id="cp5_next" class="btn btn-primary" disabled>다음: 이해 확인 퀴즈 →</button>
+                <button type="submit" id="next_1_6" class="btn btn-primary" disabled style="display:none">다음: 이해 확인 퀴즈 →</button>
             </div>
         </form>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>loadChatHistory(1, 6, 'chat_1_6');</script>
 {% endblock %}

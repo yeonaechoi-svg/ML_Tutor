@@ -97,20 +97,22 @@
             <a href="{{ url_for('student.stage2_step', step=2) }}" class="btn btn-primary">다음: 유형 판별 →</a>
         </div>
         {% else %}
+        <div class="chat-box" id="chat_2_1"></div>
         <textarea id="answer_2_1" class="form-control" rows="4"
                   placeholder="여기에 답변을 작성해주세요..."></textarea>
-        <div style="margin-top:12px;">
-            <button id="cp_s2s1_btn" class="btn btn-success"
-                    onclick="submitCheckpoint(2, 1, 'cp_s2s1_btn', 'cp_s2s1_feedback', 'cp_s2s1_next')">
+        <div style="margin-top:12px; display:flex; gap:8px;">
+            <button id="submit_2_1" class="btn btn-success"
+                    onclick="submitCheckpoint(2, 1, 'submit_2_1', 'chat_2_1', 'next_2_1')">
                 제출하기
             </button>
+            <button id="complete_2_1" class="btn btn-primary" style="display:none"
+                    onclick="completeCheckpoint(2, 1, 'next_2_1')">&#10003; 이해했습니다</button>
         </div>
-        <div id="cp_s2s1_feedback" class="checkpoint-feedback"></div>
         <form method="POST" id="stage2_step1_form">
             <input type="hidden" name="topic" id="topic_hidden">
             <div class="step-nav" style="margin-top:16px;">
                 <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary">← 학습 현황</a>
-                <button type="submit" id="cp_s2s1_next" class="btn btn-primary" disabled>다음: 유형 판별 →</button>
+                <button type="submit" id="next_2_1" class="btn btn-primary" disabled style="display:none">다음: 유형 판별 →</button>
             </div>
         </form>
         {% endif %}
@@ -123,5 +125,6 @@
 document.getElementById('stage2_step1_form')?.addEventListener('submit', function() {
     document.getElementById('topic_hidden').value = document.getElementById('topic').value;
 });
+loadChatHistory(2, 1, 'chat_2_1');
 </script>
 {% endblock %}

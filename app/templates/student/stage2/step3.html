@@ -113,22 +113,24 @@
     <div class="checkpoint-box">
         <div class="checkpoint-title">AI 체크포인트 — 문제 정의 확인</div>
         <div class="checkpoint-question">{{ "작성한 문제 정의서에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 입력 데이터(X)와 출력 목표(y)가 선택한 기계학습 유형과 일치하는지 확인해보세요.\n2. 이 데이터를 실제로 어떻게 수집할 수 있을지 방법을 생각해보세요." }}</div>
+        <div class="chat-box" id="chat_2_3"></div>
         <textarea id="answer_2_3" class="form-control" rows="4"
                   placeholder="여기에 답변을 작성해주세요..."></textarea>
-        <div style="margin-top:12px;">
-            <button id="cp_s2s3_btn" class="btn btn-success"
-                    onclick="submitCheckpoint(2, 3, 'cp_s2s3_btn', 'cp_s2s3_feedback', 'cp_s2s3_next')">
+        <div style="margin-top:12px; display:flex; gap:8px;">
+            <button id="submit_2_3" class="btn btn-success"
+                    onclick="submitCheckpoint(2, 3, 'submit_2_3', 'chat_2_3', 'next_2_3')">
                 제출하기
             </button>
+            <button id="complete_2_3" class="btn btn-primary" style="display:none"
+                    onclick="completeCheckpoint(2, 3, 'next_2_3')">&#10003; 이해했습니다</button>
         </div>
-        <div id="cp_s2s3_feedback" class="checkpoint-feedback"></div>
         <form method="POST" id="stage2_step3_form">
             <input type="hidden" name="problem_statement" id="ps_hidden">
             <input type="hidden" name="input_data" id="id_hidden">
             <input type="hidden" name="output_target" id="ot_hidden">
             <div class="step-nav" style="margin-top:16px;">
                 <a href="{{ url_for('student.stage2_step', step=2) }}" class="btn btn-secondary">← 이전</a>
-                <button type="submit" id="cp_s2s3_next" class="btn btn-primary" disabled>2단계 완료 →</button>
+                <button type="submit" id="next_2_3" class="btn btn-primary" disabled style="display:none">2단계 완료 →</button>
             </div>
         </form>
     </div>
@@ -143,5 +145,6 @@ document.getElementById('stage2_step3_form')?.addEventListener('submit', functio
     document.getElementById('id_hidden').value = document.getElementById('input_data').value;
     document.getElementById('ot_hidden').value = document.getElementById('output_target').value;
 });
+loadChatHistory(2, 3, 'chat_2_3');
 </script>
 {% endblock %}

@@ -26,41 +26,70 @@ def checkpoint():
     if not cp:
         return jsonify({'error': '해당 체크포인트를 찾을 수 없습니다.'}), 404
 
-    question = cp['question']
+    session_id = f"{current_user.id}_{stage}_{substep}"
     context = cp.get('context', '')
+    question = cp.get('question', '')
+    context_prefix = f"[학습 맥락]\n{context}\n\n[체크포인트 질문]\n{question}\n\n[학생 답변]\n"
 
-    user_message = (
-        f"[학습 맥락]\n{context}\n\n"
-        f"[체크포인트 질문]\n{question}\n\n"
-        f"[학생 답변]\n{student_answer}"
-    )
+    history = ChatLog.query.filter_by(
+        user_id=current_user.id, stage=stage, substep=substep
+    ).order_by(ChatLog.created_at).all()
+
+    messages = []
+    if not history:
+        messages.append({'role': 'user', 'content': context_prefix + student_answer})
+    else:
+        first_user_injected = False
+        for log in history:
+            if log.role == 'user' and not first_user_injected:
+                messages.append({'role': 'user', 'content': context_prefix + log.content})
+                first_user_injected = True
+            else:
+                messages.append({'role': log.role, 'content': log.content})
+        messages.append({'role': 'user', 'content': student_answer})
 
     try:
         client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
-        message = client.messages.create(
+        response = client.messages.create(
             model='claude-sonnet-4-6',
             max_tokens=1000,
             system=SYSTEM_PROMPT,
-            messages=[{'role': 'user', 'content': user_message}]
+            messages=messages
         )
-        feedback = message.content[0].text
+        feedback = response.content[0].text
     except anthropic.APIError as e:
         return jsonify({'error': f'AI 튜터 오류: {str(e)}'}), 500
-    except Exception as e:
+    except Exception:
         return jsonify({'error': 'AI 튜터에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.'}), 500
 
     try:
-        log = ChatLog(
-            user_id=current_user.id,
-            stage=stage,
-            substep=substep,
-            question=question,
-            answer=student_answer,
-            feedback=feedback
-        )
-        db.session.add(log)
+        db.session.add(ChatLog(
+            user_id=current_user.id, stage=stage, substep=substep,
+            session_id=session_id, role='user', content=student_answer
+        ))
+        db.session.add(ChatLog(
+            user_id=current_user.id, stage=stage, substep=substep,
+            session_id=session_id, role='assistant', content=feedback
+        ))
         db.session.commit()
     except Exception:
         db.session.rollback()
 
     return jsonify({'feedback': feedback})
+
+
+@ai_tutor_bp.route('/history', methods=['GET'])
+@login_required
+def history():
+    stage = request.args.get('stage', type=int)
+    substep = request.args.get('substep', type=int)
+
+    if not stage or not substep:
+        return jsonify({'error': '필수 항목이 누락되었습니다.'}), 400
+
+    logs = ChatLog.query.filter_by(
+        user_id=current_user.id, stage=stage, substep=substep
+    ).order_by(ChatLog.created_at).all()
+
+    messages = [{'role': log.role, 'content': log.content} for log in logs]
+    return jsonify({'messages': messages})

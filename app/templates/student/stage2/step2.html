@@ -116,21 +116,23 @@
             <a href="{{ url_for('student.stage2_step', step=3) }}" class="btn btn-primary">다음: 문제 정의서 →</a>
         </div>
         {% else %}
+        <div class="chat-box" id="chat_2_2"></div>
         <textarea id="answer_2_2" class="form-control" rows="4"
                   placeholder="여기에 답변을 작성해주세요..."></textarea>
-        <div style="margin-top:12px;">
-            <button id="cp_s2s2_btn" class="btn btn-success"
-                    onclick="submitCheckpoint(2, 2, 'cp_s2s2_btn', 'cp_s2s2_feedback', 'cp_s2s2_next')">
+        <div style="margin-top:12px; display:flex; gap:8px;">
+            <button id="submit_2_2" class="btn btn-success"
+                    onclick="submitCheckpoint(2, 2, 'submit_2_2', 'chat_2_2', 'next_2_2')">
                 제출하기
             </button>
+            <button id="complete_2_2" class="btn btn-primary" style="display:none"
+                    onclick="completeCheckpoint(2, 2, 'next_2_2')">&#10003; 이해했습니다</button>
         </div>
-        <div id="cp_s2s2_feedback" class="checkpoint-feedback"></div>
         <form method="POST" id="stage2_step2_form">
             <input type="hidden" name="ml_type" id="ml_type_hidden">
             <input type="hidden" name="ml_reason" id="ml_reason_hidden">
             <div class="step-nav" style="margin-top:16px;">
                 <a href="{{ url_for('student.stage2_step', step=1) }}" class="btn btn-secondary">← 이전</a>
-                <button type="submit" id="cp_s2s2_next" class="btn btn-primary" disabled>다음: 문제 정의서 →</button>
+                <button type="submit" id="next_2_2" class="btn btn-primary" disabled style="display:none">다음: 문제 정의서 →</button>
             </div>
         </form>
         {% endif %}
@@ -151,5 +153,6 @@ document.getElementById('stage2_step2_form')?.addEventListener('submit', functio
     document.getElementById('ml_type_hidden').value   = checked ? checked.value : '';
     document.getElementById('ml_reason_hidden').value = document.getElementById('ml_reason_input').value;
 });
+loadChatHistory(2, 2, 'chat_2_2');
 </script>
 {% endblock %}

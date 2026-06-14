@@ -66,9 +66,9 @@ class ChatLog(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     stage = db.Column(db.Integer, nullable=False)
     substep = db.Column(db.Integer, nullable=False)
-    question = db.Column(db.Text, nullable=False)
-    answer = db.Column(db.Text, nullable=False)
-    feedback = db.Column(db.Text, nullable=False)
+    session_id = db.Column(db.String(50), nullable=False)
+    role = db.Column(db.String(10), nullable=False)  # 'user' or 'assistant'
+    content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
