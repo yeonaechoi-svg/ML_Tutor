@@ -1,0 +1,24 @@
+{% set step_labels = ['인공지능', '기계학습', '학습유형', '실습A', '실습B', '실습C', '퀴즈'] %}
+<div style="display:flex; gap:6px; margin-bottom:24px;">
+    {% for i in range(1, 8) %}
+        {% set is_done   = i in completed %}
+        {% set is_active = i == step %}
+        {% if i == 7 %}
+            {% set href = url_for('student.stage1_quiz') %}
+        {% else %}
+            {% set href = url_for('student.stage1_step', step=i) %}
+        {% endif %}
+        <a href="{{ href }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700;
+                  text-decoration:none; transition:all 0.15s; border:2px solid;
+                  {% if is_done %}
+                      background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+                  {% elif is_active %}
+                      background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+                  {% else %}
+                      background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;
+                  {% endif %}">
+            {% if is_done %}✓ {% endif %}{{ step_labels[i-1] }}
+        </a>
+    {% endfor %}
+</div>

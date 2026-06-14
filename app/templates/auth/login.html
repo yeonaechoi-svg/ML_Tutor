@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}학생 로그인{% endblock %}
+
+{% block content %}
+<div style="display:flex; gap:48px; align-items:center; min-height:calc(100vh - 100px); padding:24px 0;">
+
+    <!-- 왼쪽: 소개 -->
+    <div style="flex:1; padding-right:8px;">
+        <div class="hero-badge" style="margin-bottom:16px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            AI 기반 학습 지원 플랫폼
+        </div>
+        <h1 style="font-size:32px; font-weight:800; color:#1e293b; line-height:1.3; margin-bottom:14px;">
+            기계학습 모델 구현<br>
+            <span style="color:#4F46E5;">AI 튜터</span>에 오신 것을<br>환영합니다
+        </h1>
+        <p style="font-size:14px; color:#64748b; line-height:1.8; margin-bottom:28px;">
+            인공지능을 처음 배우는 여러분의 든든한 학습 파트너입니다.<br>
+            7단계 구조화 학습으로 나만의 기계학습 모델을 완성하세요.
+        </p>
+
+        <div style="display:flex; gap:28px;">
+            <div style="text-align:center; background:#EEF2FF; border-radius:12px; padding:16px 20px;">
+                <div style="font-size:22px; font-weight:800; color:#4F46E5;">7단계</div>
+                <div style="font-size:12px; color:#64748b; margin-top:3px;">구조화 학습</div>
+            </div>
+            <div style="text-align:center; background:#EEF2FF; border-radius:12px; padding:16px 20px;">
+                <div style="font-size:22px; font-weight:800; color:#4F46E5;">AI 튜터</div>
+                <div style="font-size:12px; color:#64748b; margin-top:3px;">체크포인트 5개</div>
+            </div>
+            <div style="text-align:center; background:#EEF2FF; border-radius:12px; padding:16px 20px;">
+                <div style="font-size:22px; font-weight:800; color:#4F46E5;">실시간</div>
+                <div style="font-size:12px; color:#64748b; margin-top:3px;">학습 이력 저장</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 오른쪽: 로그인 박스 -->
+    <div style="flex:0 0 400px;">
+        <div class="auth-box" style="margin:0;">
+            <div style="text-align:center; margin-bottom:22px;">
+                <div style="width:48px; height:48px; background:linear-gradient(135deg,#4F46E5,#7C3AED); border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:800; margin:0 auto 10px;">AI</div>
+                <h1 class="auth-title">학생 로그인</h1>
+                <p class="auth-subtitle" style="margin-bottom:0;">반, 학번, 이름을 입력하고 비밀번호로 로그인하세요.</p>
+            </div>
+
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label" for="class_name">반</label>
+                    <select class="form-control" id="class_name" name="class_name" required>
+                        <option value="">반 선택</option>
+                        <option value="1반">1반</option>
+                        <option value="2반">2반</option>
+                        <option value="3반">3반</option>
+                        <option value="4반">4반</option>
+                        <option value="5반">5반</option>
+                        <option value="6반">6반</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="student_id">학번</label>
+                    <input class="form-control" type="text" id="student_id" name="student_id"
+                           placeholder="예: 20250101" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="name">이름</label>
+                    <input class="form-control" type="text" id="name" name="name"
+                           placeholder="예: 홍길동" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">비밀번호</label>
+                    <input class="form-control" type="password" id="password" name="password"
+                           placeholder="초기 비밀번호: 1234" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">로그인</button>
+            </form>
+
+            <div class="auth-link">
+                <a href="{{ url_for('auth.teacher_login') }}">교사로 로그인하기 →</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

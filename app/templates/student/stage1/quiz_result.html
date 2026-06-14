@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}퀴즈 결과{% endblock %}
+
+{% block content %}
+<div class="card text-center" style="padding:32px;">
+    <h2 style="font-size:22px; font-weight:700; color:#1e293b; margin-bottom:8px;">퀴즈 완료!</h2>
+    <div style="font-size:48px; font-weight:700;
+                color:{% if score >= 4 %}#10b981{% elif score >= 3 %}#f59e0b{% else %}#ef4444{% endif %};
+                margin:16px 0;">
+        {{ score }} / {{ total }}
+    </div>
+    <p style="font-size:15px; color:#475569; margin-bottom:8px;">
+        {% if score == total %}
+            완벽합니다! 1단계 학습을 훌륭하게 마쳤습니다.
+        {% elif score >= 4 %}
+            훌륭합니다! 기계학습 유형을 잘 이해하고 있습니다.
+        {% elif score >= 3 %}
+            좋습니다! 틀린 문항을 다시 복습해보세요.
+        {% else %}
+            1단계 내용을 다시 학습하고 재도전해보세요.
+        {% endif %}
+    </p>
+</div>
+
+<div class="card">
+    <h3 class="card-title">문항별 결과</h3>
+    {% for r in results %}
+    <div class="quiz-question">
+        <div class="quiz-question-text">
+            Q{{ loop.index }}.
+            {% if r.is_correct %}
+                <span style="color:#10b981;">&#10003; 정답</span>
+            {% else %}
+                <span style="color:#ef4444;">&#10007; 오답</span>
+            {% endif %}
+            — {{ r.question }}
+        </div>
+        <ul class="quiz-choices" style="pointer-events:none;">
+            {% for choice in r.choices %}
+            {% set ci = loop.index0 %}
+            <li>
+                <label class="
+                    {%- if r.user_answer == ci and r.is_correct %} quiz-result-correct
+                    {%- elif r.user_answer == ci and not r.is_correct %} quiz-result-wrong
+                    {%- elif ci == r.correct_answer and not r.is_correct %} quiz-result-correct-answer
+                    {%- endif %}
+                ">
+                    <input type="radio" {% if r.user_answer == ci %}checked{% endif %} disabled>
+                    {{ choice }}
+                    {% if ci == r.correct_answer %}<strong style="color:#065f46;"> &#8592; 정답</strong>{% endif %}
+                </label>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="quiz-explanation">&#128161; {{ r.explanation }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="text-center" style="margin-top:24px;">
+    <a href="{{ url_for('student.dashboard') }}" class="btn btn-primary">학습 현황으로 돌아가기</a>
+    <a href="{{ url_for('student.stage1_quiz') }}" class="btn btn-secondary" style="margin-left:12px;">퀴즈 다시 풀기</a>
+</div>
+{% endblock %}

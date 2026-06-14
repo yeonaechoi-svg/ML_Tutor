@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}1단계 — 기계학습이란?{% endblock %}
+
+{% block content %}
+{% include 'student/stage1/_progress.html' %}
+
+<div class="card">
+    <h2 class="card-title">스텝 2 — 기계학습이란?</h2>
+
+    <div class="section">
+        <h3 class="section-title">기계학습(Machine Learning)이란?</h3>
+        <p>기계학습은 <strong>컴퓨터가 데이터로부터 스스로 학습하여 성능을 향상시키는 인공지능의 한 분야</strong>입니다. 개발자가 명시적으로 규칙을 프로그래밍하지 않아도, 데이터에서 패턴을 찾아 예측이나 결정을 내릴 수 있습니다.</p>
+        <div class="info-box" style="margin-top:12px;">
+            <strong>Arthur Samuel (1959)</strong>의 정의:<br>
+            "기계학습은 명시적으로 프로그래밍하지 않고도 컴퓨터가 학습하는 능력을 갖도록 하는 연구 분야"
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">기계학습의 동작 원리</h3>
+        <div style="display:flex; align-items:center; gap:8px; padding:20px; background:#f8fafc; border-radius:8px; overflow-x:auto;">
+            {% for item in [('📊 데이터 수집', '#dbeafe'), ('🔄 전처리', '#e0e7ff'), ('🎓 모델 학습', '#fce7f3'), ('📈 성능 평가', '#dcfce7'), ('🔮 예측/분류', '#fef3c7')] %}
+            <div style="text-align:center; min-width:90px;">
+                <div style="background:{{ item[1] }}; border-radius:8px; padding:10px; font-size:12px; font-weight:600; color:#1e293b;">{{ item[0] }}</div>
+            </div>
+            {% if not loop.last %}
+            <div style="color:#94a3b8; font-size:20px; flex-shrink:0;">→</div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">기계학습이 필요한 이유</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+            {% for title, desc in [
+                ('규칙이 너무 복잡할 때', '자연어 번역, 이미지 인식처럼 규칙을 명시하기 어려운 문제'),
+                ('데이터가 많을 때', '수백만 건의 데이터에서 패턴을 찾는 것은 사람이 하기 어렵다'),
+                ('환경이 변할 때', '스팸 패턴처럼 지속적으로 변하는 문제에 자동 적응 가능')
+            ] %}
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:14px;">
+                <div style="font-weight:600; font-size:13px; color:#1e293b; margin-bottom:6px;">{{ title }}</div>
+                <div style="font-size:13px; color:#64748b;">{{ desc }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- AI 체크포인트 1 -->
+    <div class="checkpoint-box">
+        <div class="checkpoint-title">AI 체크포인트 1</div>
+        <div class="checkpoint-question">{{ "다음 두 가지 질문에 답해보세요.\n\n1. 전통적인 프로그래밍과 기계학습의 차이를 자신의 말로 설명해보세요.\n2. 기계학습이 더 적합한 상황은 어떤 경우인지 실생활 예를 들어 설명해보세요." }}</div>
+
+        {% if already_completed %}
+        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage1_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+            <a href="{{ url_for('student.stage1_step', step=3) }}" class="btn btn-primary">다음: 기계학습 유형 →</a>
+        </div>
+        {% else %}
+        <textarea id="answer_1_2" class="form-control" rows="5"
+                  placeholder="여기에 답변을 작성해주세요..."></textarea>
+        <div style="margin-top:12px;">
+            <button id="cp1_btn" class="btn btn-success" onclick="submitCheckpoint(1, 2, 'cp1_btn', 'cp1_feedback', 'cp1_next')">제출하기</button>
+        </div>
+        <div id="cp1_feedback" class="checkpoint-feedback"></div>
+        <form method="POST" id="cp1_form">
+            <div class="step-nav" style="margin-top:16px;">
+                <a href="{{ url_for('student.stage1_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+                <button type="submit" id="cp1_next" class="btn btn-primary" disabled>다음: 기계학습 유형 →</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

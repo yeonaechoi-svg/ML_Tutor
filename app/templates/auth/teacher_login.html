@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}교사 로그인{% endblock %}
+
+{% block content %}
+<div style="padding:48px 0 56px;">
+    <div class="auth-wrapper">
+        <div class="auth-box">
+            <div style="text-align:center; margin-bottom:24px;">
+                <div style="width:52px; height:52px; background:linear-gradient(135deg,#1e293b,#334155); border-radius:16px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; margin:0 auto 12px;">🎓</div>
+                <h1 class="auth-title">교사 로그인</h1>
+                <p class="auth-subtitle">교사 전용 코드를 입력하여 로그인하세요.</p>
+            </div>
+
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label" for="teacher_code">교사 코드</label>
+                    <input class="form-control" type="password" id="teacher_code" name="teacher_code"
+                           placeholder="교사 코드 입력" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">로그인</button>
+            </form>
+
+            <div class="auth-link">
+                <a href="{{ url_for('auth.login') }}">← 학생 로그인으로 돌아가기</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}교사 대시보드{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-4">
+    <h1 style="font-size:22px; font-weight:700; color:#1e293b;">교사 대시보드</h1>
+    <a href="{{ url_for('teacher.upload') }}" class="btn btn-primary">학생 명단 업로드</a>
+</div>
+
+<div class="grid-3" style="margin-bottom:24px;">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_students }}</div>
+        <div class="stat-label">전체 학생 수</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color:#10b981;">{{ stage_counts.get(1, 0) }}</div>
+        <div class="stat-label">1단계 진행 중</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color:#f59e0b;">
+            {{ students|selectattr('current_stage', 'equalto', 0)|list|length }}
+        </div>
+        <div class="stat-label">미시작 학생</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="card-title">단계별 진행 현황</h2>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        {% set stage_names = {1: '1단계', 2: '2단계', 3: '3단계', 4: '4단계', 5: '5단계', 6: '6단계', 7: '7단계'} %}
+        {% for stage in range(1, 8) %}
+        <div style="flex:1; min-width:100px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; text-align:center;">
+            <div style="font-size:22px; font-weight:700; color:#4F46E5;">{{ stage_counts.get(stage, 0) }}</div>
+            <div style="font-size:12px; color:#64748b;">{{ stage_names[stage] }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="flex-between" style="margin-bottom:16px;">
+        <h2 class="card-title" style="margin-bottom:0; padding-bottom:0; border-bottom:none;">학생 목록</h2>
+        <a href="{{ url_for('teacher.students') }}" class="btn btn-secondary btn-sm">전체 보기</a>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>이름</th>
+                    <th>반</th>
+                    <th>학번</th>
+                    <th>현재 단계</th>
+                    <th>최종 접속</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for info in students[:20] %}
+                <tr>
+                    <td><strong>{{ info.user.name }}</strong></td>
+                    <td>{{ info.user.class_name }}</td>
+                    <td>{{ info.user.student_id }}</td>
+                    <td>
+                        {% if info.current_stage > 0 %}
+                            <span class="badge badge-blue">{{ info.current_stage }}단계</span>
+                        {% else %}
+                            <span class="badge badge-gray">미시작</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted">
+                        {% if info.last_access %}
+                            {{ info.last_access.strftime('%m/%d %H:%M') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-muted" style="padding:24px;">등록된 학생이 없습니다. 학생 명단을 업로드해주세요.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if students|length > 20 %}
+    <p class="text-muted" style="margin-top:12px; text-align:right;">외 {{ students|length - 20 }}명 — <a href="{{ url_for('teacher.students') }}">전체 보기</a></p>
+    {% endif %}
+</div>
+{% endblock %}

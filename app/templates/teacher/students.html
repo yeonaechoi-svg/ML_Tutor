@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}학생 목록{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-4">
+    <h1 style="font-size:22px; font-weight:700; color:#1e293b;">학생 목록</h1>
+    <a href="{{ url_for('teacher.upload') }}" class="btn btn-primary">학생 명단 업로드</a>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+    <form method="GET" style="display:flex; gap:12px; align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0; flex:0 0 auto;">
+            <label class="form-label">반 필터</label>
+            <select class="form-control" name="class_name" style="width:140px;" onchange="this.form.submit()">
+                <option value="">전체 반</option>
+                {% for c in class_list %}
+                <option value="{{ c }}" {% if c == class_filter %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if class_filter %}
+        <a href="{{ url_for('teacher.students') }}" class="btn btn-secondary" style="margin-bottom:0;">필터 해제</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>이름</th>
+                    <th>반</th>
+                    <th>학번</th>
+                    <th>첫 로그인</th>
+                    <th>현재 단계</th>
+                    <th>퀴즈 점수</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for info in students %}
+                <tr>
+                    <td><strong>{{ info.user.name }}</strong></td>
+                    <td>{{ info.user.class_name }}</td>
+                    <td>{{ info.user.student_id }}</td>
+                    <td>
+                        {% if info.user.is_first_login %}
+                            <span class="badge badge-yellow">미완료</span>
+                        {% else %}
+                            <span class="badge badge-green">완료</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if info.current_stage > 0 %}
+                            <span class="badge badge-blue">{{ info.current_stage }}단계</span>
+                        {% else %}
+                            <span class="badge badge-gray">미시작</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ info.quiz_score }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('teacher.reset_password', user_id=info.user.id) }}"
+                              onsubmit="return confirm('{{ info.user.name }} 학생의 비밀번호를 1234로 초기화하시겠습니까?');">
+                            <button type="submit" class="btn btn-danger btn-sm">비밀번호 초기화</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center text-muted" style="padding:24px;">등록된 학생이 없습니다.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="text-muted" style="margin-top:12px;">총 {{ students|length }}명</p>
+</div>
+{% endblock %}

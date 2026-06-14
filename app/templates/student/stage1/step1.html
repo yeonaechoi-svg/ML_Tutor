@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}1단계 — 인공지능이란?{% endblock %}
+
+{% block content %}
+{% include 'student/stage1/_progress.html' %}
+
+<div class="card">
+    <h2 class="card-title">스텝 1 — 인공지능이란?</h2>
+
+    <div class="section">
+        <h3 class="section-title">인공지능(AI)이란 무엇인가?</h3>
+        <p>인공지능(Artificial Intelligence, AI)은 <strong>컴퓨터가 인간의 지능적인 행동을 흉내 내도록 만든 기술</strong>입니다. 학습, 추론, 문제 해결, 언어 이해, 시각 인식 등 인간이 수행하는 지능적 작업을 컴퓨터가 수행할 수 있도록 합니다.</p>
+
+        <div class="info-box" style="margin-top:14px;">
+            <strong>지능 에이전트(Intelligent Agent)</strong>란?<br>
+            주어진 환경을 인식(Perception)하고, 목표를 달성하기 위해 행동(Action)하는 시스템을 말합니다. 예를 들어, 체스 프로그램은 체스판의 상태를 인식하고 최선의 수를 선택해 행동합니다.
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">전통적 프로그래밍 vs 기계학습</h3>
+        <div class="grid-2" style="margin-top:12px;">
+            <div style="background:#fff7ed; border:1.5px solid #fed7aa; border-radius:8px; padding:18px;">
+                <div style="font-weight:700; color:#c2410c; margin-bottom:10px;">📋 전통적 프로그래밍</div>
+                <div style="font-size:13px; color:#374151; line-height:1.9;">
+                    • <strong>입력:</strong> 데이터 + 규칙<br>
+                    • <strong>출력:</strong> 결과<br>
+                    • 개발자가 규칙을 직접 코딩<br>
+                    • 예: 계산기, 신호등 제어<br>
+                    <em style="color:#92400e;">→ "규칙을 내가 만든다"</em>
+                </div>
+            </div>
+            <div style="background:#eff6ff; border:1.5px solid #93c5fd; border-radius:8px; padding:18px;">
+                <div style="font-weight:700; color:#1d4ed8; margin-bottom:10px;">🤖 기계학습</div>
+                <div style="font-size:13px; color:#374151; line-height:1.9;">
+                    • <strong>입력:</strong> 데이터 + 결과<br>
+                    • <strong>출력:</strong> 규칙(모델)<br>
+                    • 컴퓨터가 데이터에서 규칙을 학습<br>
+                    • 예: 스팸 필터, 추천 시스템<br>
+                    <em style="color:#1e40af;">→ "규칙을 데이터에서 찾는다"</em>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">기계학습이 필요한 이유</h3>
+        <p>스팸 메일 필터를 만든다고 가정해봅시다. 전통적 프로그래밍으로 만들려면 스팸의 특징(특정 단어, 발신자, 패턴 등)을 개발자가 직접 모두 규칙으로 만들어야 합니다. 하지만 스팸은 매일 새로운 형태로 등장합니다.</p>
+        <div class="warning-box">
+            규칙이 너무 복잡하거나, 규칙이 계속 바뀌거나, 데이터에서 패턴을 찾기 어려울 때 → 기계학습이 더 효과적입니다.
+        </div>
+    </div>
+
+    <form method="POST" class="step-nav">
+        <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary">← 대시보드</a>
+        <button type="submit" class="btn btn-primary">다음: 기계학습이란? →</button>
+    </form>
+</div>
+{% endblock %}

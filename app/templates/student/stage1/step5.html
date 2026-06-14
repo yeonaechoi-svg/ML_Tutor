@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}실습 B — 분류{% endblock %}
+
+{% block content %}
+{% include 'student/stage1/_progress.html' %}
+
+<div class="card">
+    <h2 class="card-title">스텝 5 — 실습 B: 학생 성적 등급 분류</h2>
+
+    <div class="section">
+        <h3 class="section-title">문제 정의</h3>
+        <p>학생의 <strong>중간고사, 기말고사, 출석률, 과제 점수</strong>를 바탕으로 <strong>성적 등급(A/B/C/D/F)</strong>을 분류하는 모델을 만듭니다. 출력이 카테고리이므로 <strong>분류(Classification)</strong>를 사용합니다.</p>
+        <div class="info-box" style="margin-top:10px;">
+            <strong>분류 알고리즘 종류:</strong> 의사결정나무(Decision Tree), 로지스틱 회귀, KNN, 랜덤 포레스트 등이 있습니다. 교과서에서는 의사결정나무를 주로 사용합니다.
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">의사결정나무란?</h3>
+        <p style="margin-bottom:10px;">의사결정나무는 <strong>질문을 연속으로 던져 가며 결론에 도달하는</strong> 알고리즘입니다. 마치 스무고개처럼 "중간고사 점수가 80점 이상인가?" → "출석률이 80% 이상인가?" 등의 조건을 통해 등급을 결정합니다.</p>
+        <div style="background:#f8fafc; border-radius:8px; padding:16px; font-size:13px; color:#374151; font-family:monospace; line-height:2;">
+            중간고사 ≥ 80 ?<br>
+            ├── Yes → 기말고사 ≥ 75 ? → Yes → <strong style="color:#10b981;">A등급</strong><br>
+            └── No → 출석 ≥ 80 ?  → Yes → <strong style="color:#3b82f6;">B등급</strong>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">전체 코드 (읽기 전용)</h3>
+        <div class="code-block">
+            <button class="copy-btn">복사</button>
+            <pre><span class="code-keyword">import</span> pandas <span class="code-keyword">as</span> pd
+<span class="code-keyword">from</span> sklearn.model_selection <span class="code-keyword">import</span> train_test_split
+<span class="code-keyword">from</span> sklearn.tree <span class="code-keyword">import</span> DecisionTreeClassifier
+<span class="code-keyword">from</span> sklearn.metrics <span class="code-keyword">import</span> accuracy_score, classification_report
+
+<span class="code-comment"># 1. 데이터 로드</span>
+df = pd.read_csv(<span class="code-string">'student_grade.csv'</span>)
+
+<span class="code-comment"># 2. 특성(X)과 목표값(y) 분리</span>
+X = df[[<span class="code-string">'중간고사'</span>, <span class="code-string">'기말고사'</span>, <span class="code-string">'출석률'</span>, <span class="code-string">'과제점수'</span>]]
+y = df[<span class="code-string">'등급'</span>]  <span class="code-comment"># A, B, C, D, F</span>
+
+<span class="code-comment"># 3. 훈련/테스트 데이터 분리</span>
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=<span class="code-number">0.3</span>, random_state=<span class="code-number">42</span>
+)
+
+<span class="code-comment"># 4. 의사결정나무 모델 생성 및 학습</span>
+model = DecisionTreeClassifier(random_state=<span class="code-number">42</span>)
+model.fit(X_train, y_train)
+
+<span class="code-comment"># 5. 예측</span>
+y_pred = model.predict(X_test)
+
+<span class="code-comment"># 6. 정확도 평가</span>
+print(<span class="code-string">f'정확도(Accuracy): {accuracy_score(y_test, y_pred):.3f}'</span>)
+print(classification_report(y_test, y_pred))</pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">성능 지표: 정확도(Accuracy)</h3>
+        <div class="info-box">
+            <strong>정확도(Accuracy)</strong> = 전체 예측 중 맞게 예측한 비율<br><br>
+            예) 100개 중 85개를 올바르게 분류했다면 → 정확도 = 0.85 (85%)
+        </div>
+    </div>
+
+    <!-- AI 체크포인트 4 -->
+    <div class="checkpoint-box">
+        <div class="checkpoint-title">AI 체크포인트 4</div>
+        <div class="checkpoint-question">{{ "분류(Classification) 실습 코드를 보고 다음 두 가지 질문에 답해보세요.\n\n1. 분류 모델에서 정확도(Accuracy)가 의미하는 것을 설명해보세요.\n2. 코드에서 X와 y를 나누는 이유는 무엇인가요?" }}</div>
+
+        {% if already_completed %}
+        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage1_step', step=4) }}" class="btn btn-secondary">← 이전</a>
+            <a href="{{ url_for('student.stage1_step', step=6) }}" class="btn btn-primary">다음: 실습 C →</a>
+        </div>
+        {% else %}
+        <textarea id="answer_1_5" class="form-control" rows="5"
+                  placeholder="여기에 답변을 작성해주세요..."></textarea>
+        <div style="margin-top:12px;">
+            <button id="cp4_btn" class="btn btn-success" onclick="submitCheckpoint(1, 5, 'cp4_btn', 'cp4_feedback', 'cp4_next')">제출하기</button>
+        </div>
+        <div id="cp4_feedback" class="checkpoint-feedback"></div>
+        <form method="POST">
+            <div class="step-nav" style="margin-top:16px;">
+                <a href="{{ url_for('student.stage1_step', step=4) }}" class="btn btn-secondary">← 이전</a>
+                <button type="submit" id="cp4_next" class="btn btn-primary" disabled>다음: 실습 C →</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

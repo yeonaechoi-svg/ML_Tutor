@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}학생 명단 업로드{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('teacher.dashboard') }}" style="color:#1a56db; text-decoration:none;">← 대시보드로 돌아가기</a>
+</div>
+
+<div class="card" style="max-width:600px;">
+    <h2 class="card-title">학생 명단 업로드</h2>
+
+    <div class="info-box" style="margin-bottom:20px;">
+        <strong>엑셀 파일 형식 안내</strong><br>
+        • A열: 반 (예: 1반, 2반)<br>
+        • B열: 학번 (예: 20250101)<br>
+        • C열: 이름 (예: 홍길동)<br>
+        • 1행은 헤더로 건너뜁니다. 2행부터 학생 데이터를 입력하세요.<br>
+        • 초기 비밀번호는 <strong>1234</strong>로 설정됩니다.
+    </div>
+
+    <div class="warning-box" style="margin-bottom:20px;">
+        이미 등록된 학번은 건너뜁니다. 중복 등록을 걱정하지 않아도 됩니다.
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label class="form-label" for="excel_file">엑셀 파일 선택 (.xlsx, .xls)</label>
+            <input type="file" class="form-control" id="excel_file" name="excel_file"
+                   accept=".xlsx,.xls" required>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:20px;">
+            <button type="submit" class="btn btn-primary">업로드</button>
+            <a href="{{ url_for('teacher.students') }}" class="btn btn-secondary">취소</a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="max-width:600px; margin-top:16px;">
+    <h3 class="card-title">엑셀 파일 예시</h3>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>A열 (반)</th><th>B열 (학번)</th><th>C열 (이름)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1반</td><td>20250101</td><td>홍길동</td></tr>
+                <tr><td>1반</td><td>20250102</td><td>김철수</td></tr>
+                <tr><td>2반</td><td>20250201</td><td>이영희</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

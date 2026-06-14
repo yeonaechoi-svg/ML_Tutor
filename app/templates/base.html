@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ML 튜터{% endblock %} — 기계학습 모델 구현 AI 튜터</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234F46E5'/><text x='50' y='68' font-size='48' font-family='Arial,sans-serif' font-weight='900' fill='white' text-anchor='middle'>AI</text></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+<header class="site-header">
+    <div class="container">
+        <a href="{{ url_for('auth.index') }}" class="site-logo">
+            <div class="site-logo-icon">AI</div>
+            <div class="site-logo-text">
+                <span class="site-logo-title">기계학습 모델 구현 AI 튜터</span>
+                <span class="site-logo-sub">고등학교 정보 교과 · 인공지능 단원</span>
+            </div>
+        </a>
+        <nav class="site-nav">
+            {% if current_user.is_authenticated %}
+                <span class="nav-user">
+                    {% if current_user.role == 'teacher' %}
+                        교사 모드
+                    {% else %}
+                        {{ current_user.class_name }} {{ current_user.name }}
+                    {% endif %}
+                </span>
+                {% if current_user.role == 'teacher' %}
+                    <a href="{{ url_for('teacher.dashboard') }}">대시보드</a>
+                    <a href="{{ url_for('teacher.students') }}">학생 목록</a>
+                    <a href="{{ url_for('teacher.upload') }}">학생 등록</a>
+                {% else %}
+                    <a href="{{ url_for('student.dashboard') }}">학습 현황</a>
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}" class="nav-logout">로그아웃</a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}">학생 로그인</a>
+                <a href="{{ url_for('auth.teacher_login') }}">교사 로그인</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
+
+<main class="main-content">
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <p>기계학습 모델 구현 AI 튜터 — 고등학교 정보 교과 인공지능 단원 프로젝트 지원 시스템</p>
+    </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

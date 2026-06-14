@@ -1,0 +1,8 @@
+.env
+instance/
+__pycache__/
+uploads/
+server_err.txt
+server_out.txt
+server.pid
+*.txt
