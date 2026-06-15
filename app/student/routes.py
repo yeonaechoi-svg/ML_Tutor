@@ -39,15 +39,18 @@ def get_completed_substeps(stage):
 def dashboard():
     completed_s1 = get_completed_substeps(1)
     completed_s2 = get_completed_substeps(2)
+    completed_s3 = get_completed_substeps(3)
     quiz_result = QuizResult.query.filter_by(
         user_id=current_user.id, stage=1
     ).order_by(QuizResult.created_at.desc()).first()
     idea = ProjectIdea.query.filter_by(user_id=current_user.id).first()
 
-    # 현재 진행 중인 전체 단계 계산
     s1_done = len(completed_s1) >= 7
     s2_done = len(completed_s2) >= 3
-    if s2_done:
+    s3_done = len(completed_s3) >= 3
+    if s3_done:
+        current_stage = 4
+    elif s2_done:
         current_stage = 3
     elif s1_done:
         current_stage = 2
@@ -59,6 +62,7 @@ def dashboard():
         completed=completed_s1,
         completed_s1=completed_s1,
         completed_s2=completed_s2,
+        completed_s3=completed_s3,
         current_stage=current_stage,
         quiz_result=quiz_result,
         idea=idea
@@ -297,6 +301,75 @@ def stage2_step(step):
         1: 'student/stage2/step1.html',
         2: 'student/stage2/step2.html',
         3: 'student/stage2/step3.html',
+    }
+
+    return render_template(
+        template_map[step],
+        step=step,
+        completed=completed,
+        already_completed=(step in completed),
+        idea=idea
+    )
+
+
+# ── 3단계: 데이터 탐색과 전처리 ──
+
+@student_bp.route('/stage3')
+@login_required
+def stage3():
+    completed = get_completed_substeps(3)
+    if not completed:
+        return redirect(url_for('student.stage3_step', step=1))
+    next_step = min(max(completed) + 1, 3)
+    return redirect(url_for('student.stage3_step', step=next_step))
+
+
+@student_bp.route('/stage3/step/<int:step>', methods=['GET', 'POST'])
+@login_required
+def stage3_step(step):
+    if step not in range(1, 4):
+        return redirect(url_for('student.stage3_step', step=1))
+
+    completed = get_completed_substeps(3)
+    idea = ProjectIdea.query.filter_by(user_id=current_user.id).first()
+
+    if request.method == 'POST':
+        try:
+            if not idea:
+                idea = ProjectIdea(user_id=current_user.id)
+                db.session.add(idea)
+
+            if step == 1:
+                idea.data_source = request.form.get('data_source', '').strip()
+                idea.file_name   = request.form.get('file_name', '').strip()
+            elif step == 2:
+                idea.data_rows   = request.form.get('data_rows', '').strip()
+                idea.data_cols   = request.form.get('data_cols', '').strip()
+                idea.column_list = request.form.get('column_list', '').strip()
+            elif step == 3:
+                idea.missing_handling = request.form.get('missing_handling', '').strip()
+                idea.outlier_handling = request.form.get('outlier_handling', '').strip()
+
+            save_progress(3, step)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        if request.form.get('save_action') == 'save_only':
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': True})
+            flash('저장되었습니다.', 'success')
+            return redirect(url_for('student.stage3_step', step=step))
+
+        if step < 3:
+            return redirect(url_for('student.stage3_step', step=step + 1))
+        flash('3단계를 완료했습니다! 수고했어요.', 'success')
+        return redirect(url_for('student.dashboard'))
+
+    template_map = {
+        1: 'student/stage3/step1.html',
+        2: 'student/stage3/step2.html',
+        3: 'student/stage3/step3.html',
     }
 
     return render_template(

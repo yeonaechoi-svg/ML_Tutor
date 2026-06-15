@@ -52,7 +52,7 @@
     {% set stage_list = [
         (1, '기계학습 개념과 유형',          'student.stage1', true),
         (2, '아이디어 구상 및 문제 정의',    'student.stage2', true),
-        (3, '데이터 탐색과 전처리',          none,             false),
+        (3, '데이터 탐색과 전처리',          'student.stage3', true),
         (4, '기계학습 유형과 알고리즘 선정', none,             false),
         (5, '기계학습을 통한 모델 생성',     none,             false),
         (6, '성능평가 및 예측',              none,             false),
@@ -64,7 +64,7 @@
         {% set is_done    = num in nav_completed_stages %}
         {% set is_current = num == nav_current_stage %}
         <div class="stage-sidebar-item {% if is_done %}done{% elif is_current %}current{% else %}locked{% endif %}">
-            {% if implemented and (is_done or is_current) %}
+            {% if implemented %}
                 <a href="{{ url_for(endpoint) }}" class="stage-sidebar-link">
             {% else %}
                 <span class="stage-sidebar-link">
@@ -76,7 +76,7 @@
                 </span>
                 {% if not implemented %}<span class="stage-lock">🔒</span>
                 {% elif is_current %}<span class="stage-arrow">▶</span>{% endif %}
-            {% if implemented and (is_done or is_current) %}
+            {% if implemented %}
                 </a>
             {% else %}
                 </span>

@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}3단계 — 데이터 탐색{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">3단계 — 데이터 탐색과 전처리</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'데이터 수집'),(2,'데이터 탐색'),(3,'데이터 전처리')] %}
+        <a href="{{ url_for('student.stage3_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none; cursor:pointer;
+            {% if i == 2 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 2 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 내용을 수정하고 저장할 수 있습니다.</div>
+    {% endif %}
+
+    {% if idea and idea.file_name %}
+    <div class="info-box" style="margin-bottom:20px;">
+        <strong>파일명:</strong> {{ idea.file_name }}
+        {% if idea.data_source %}&nbsp;|&nbsp;<strong>출처:</strong> {{ idea.data_source }}{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <h3 class="section-title">스텝 2 — 데이터 탐색 (EDA)</h3>
+        <p style="font-size:14px; color:#475569; line-height:1.8;">불러온 데이터의 구조와 특성을 파악합니다. 전처리 전에 데이터를 충분히 이해해야 합니다.<br>코드 실행 중 궁금한 점은 오른쪽 <strong>AI 도우미</strong>에 질문하세요.</p>
+    </div>
+
+    <!-- 기본 정보 확인 코드 -->
+    <div class="section">
+        <h3 class="section-title">기본 정보 확인</h3>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python — 데이터 기본 정보</span>
+                <button class="copy-btn">복사</button>
+            </div>
+            <pre>print("데이터 크기:", df.shape)      # (행 수, 열 수)
+print("\n컬럼 목록:")
+print(df.columns.tolist())
+
+print("\n데이터 타입 및 결측치:")
+print(df.info())
+
+print("\n기초 통계:")
+print(df.describe())</pre>
+        </div>
+
+        <div class="code-block" style="margin-top:12px;">
+            <div class="code-header">
+                <span>Python — 결측치 확인</span>
+                <button class="copy-btn">복사</button>
+            </div>
+            <pre>print("결측치 개수:")
+print(df.isnull().sum())
+
+print("\n결측치 비율(%):")
+print((df.isnull().sum() / len(df) * 100).round(2))</pre>
+        </div>
+    </div>
+
+    <!-- 데이터 시각화 코드 -->
+    <div class="section">
+        <h3 class="section-title">데이터 분포 시각화 (선택)</h3>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python — 분포 확인</span>
+                <button class="copy-btn">복사</button>
+            </div>
+            <pre>import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rc('font', family='Malgun Gothic')  # 한글 폰트
+
+# 수치형 컬럼 히스토그램
+df.hist(figsize=(12, 8))
+plt.tight_layout()
+plt.show()
+
+# 특정 컬럼 값 분포 (컬럼명을 수정하세요)
+# df['컬럼명'].value_counts().plot(kind='bar')</pre>
+        </div>
+    </div>
+
+    <!-- 학생 입력 + 체크포인트 + 네비 -->
+    <form method="POST" id="stage3_step2_form">
+        <div class="section">
+            <h3 class="section-title">탐색 결과 기록</h3>
+            <p style="font-size:13px; color:#64748b; margin-bottom:14px;">코드를 실행한 결과를 아래에 기록하세요.</p>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">데이터 행 수</label>
+                    <input class="form-control" type="text" name="data_rows"
+                           placeholder="예: 1462"
+                           value="{{ idea.data_rows if idea and idea.data_rows else '' }}">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">데이터 열 수</label>
+                    <input class="form-control" type="text" name="data_cols"
+                           placeholder="예: 12"
+                           value="{{ idea.data_cols if idea and idea.data_cols else '' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">주요 컬럼 목록 (쉼표로 구분)</label>
+                <textarea class="form-control" name="column_list" rows="3"
+                          placeholder="예: date, season, weather, temp, humidity, windspeed, count">{{ idea.column_list if idea and idea.column_list else '' }}</textarea>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+                <button type="submit" name="save_action" value="save_only"
+                        class="btn btn-secondary" style="padding:10px 24px; font-size:14px;">
+                    💾 저장하기
+                </button>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div style="font-size:13px; color:#059669; font-weight:600; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 14px;">
+                    ✓ {{ message }}
+                </div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 데이터 탐색 이해 확인</div>
+            <div class="checkpoint-question">데이터 탐색에 대해 다음 두 가지 질문에 답해보세요.
+
+1. df.info()와 df.describe()를 실행하면 각각 어떤 정보를 얻을 수 있나요?
+2. 탐색한 데이터에서 결측치가 있었나요? 결측치를 미리 파악하는 것이 왜 중요한지 설명해보세요.</div>
+
+            <div class="chat-box" id="chat_3_2"></div>
+            <textarea id="answer_3_2" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_3_2" class="btn btn-success"
+                        onclick="submitCheckpoint(3, 2, 'submit_3_2', 'chat_3_2', 'next_3_2')">제출하기</button>
+                <button type="button" id="complete_3_2" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(3, 2, 'next_3_2')">&#10003; 이해했습니다</button>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage3_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+            {% if already_completed %}
+            <button type="submit" class="btn btn-primary">저장하고 다음으로 →</button>
+            {% else %}
+            <button type="submit" id="next_3_2" class="btn btn-primary" disabled style="display:none">다음: 데이터 전처리 →</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- AI 코드 도우미 사이드바 -->
+<button id="ai-sidebar-toggle" onclick="toggleSidebar()">💬
+AI
+도우미</button>
+
+<div id="ai-code-sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-header-title">💻 AI 코드 도우미</div>
+        <button class="sidebar-close-btn" onclick="toggleSidebar()">✕</button>
+    </div>
+    <div class="sidebar-desc">
+        코드 실행 중 오류나 궁금한 점을 질문하세요.<br>
+        오류 메시지를 그대로 붙여넣으면 더 정확하게 도와드립니다.
+    </div>
+    <div id="sidebar-chat-box"></div>
+    <div class="sidebar-input-area">
+        <textarea id="sidebar-input" placeholder="예: df.info() 실행 결과 중 Non-Null Count가 무슨 뜻인가요?"></textarea>
+        <button id="sidebar-send-btn" onclick="submitSidebarChat()">전송하기</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+SIDEBAR_STAGE = 3;
+SIDEBAR_STEP = 2;
+loadChatHistory(3, 2, 'chat_3_2');
+</script>
+{% endblock %}

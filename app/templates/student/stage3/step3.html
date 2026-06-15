@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}3단계 — 데이터 전처리{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">3단계 — 데이터 탐색과 전처리</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'데이터 수집'),(2,'데이터 탐색'),(3,'데이터 전처리')] %}
+        <a href="{{ url_for('student.stage3_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none; cursor:pointer;
+            {% if i == 3 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 3 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 내용을 수정하고 저장할 수 있습니다.</div>
+    {% endif %}
+
+    <div class="section">
+        <h3 class="section-title">스텝 3 — 데이터 전처리</h3>
+        <p style="font-size:14px; color:#475569; line-height:1.8;">결측치와 이상치를 처리하여 모델 학습에 적합한 데이터로 만듭니다.<br>코드 실행 중 오류가 발생하면 오른쪽 <strong>AI 도우미</strong>에 질문하세요.</p>
+    </div>
+
+    <!-- 결측치 처리 -->
+    <div class="section">
+        <h3 class="section-title">결측치(Missing Value) 처리</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+            <div style="background:#fefce8; border-radius:10px; padding:14px; border-left:3px solid #ca8a04;">
+                <div style="font-size:12px; font-weight:700; color:#92400e; margin-bottom:6px;">방법 1 — 결측치 행 제거</div>
+                <div style="font-size:12px; color:#64748b; line-height:1.6;">결측치가 있는 행 전체를 삭제합니다. 데이터가 충분할 때 사용합니다.</div>
+            </div>
+            <div style="background:#eff6ff; border-radius:10px; padding:14px; border-left:3px solid #3b82f6;">
+                <div style="font-size:12px; font-weight:700; color:#1d4ed8; margin-bottom:6px;">방법 2 — 대표값으로 대체</div>
+                <div style="font-size:12px; color:#64748b; line-height:1.6;">평균(mean), 중앙값(median), 최빈값(mode)으로 결측치를 채웁니다.</div>
+            </div>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python — 방법 1: 결측치 행 제거</span>
+                <button class="copy-btn">복사</button>
+            </div>
+            <pre>df_clean = df.dropna()
+print("전처리 전:", df.shape)
+print("전처리 후:", df_clean.shape)</pre>
+        </div>
+
+        <div class="code-block" style="margin-top:10px;">
+            <div class="code-header">
+                <span>Python — 방법 2: 평균값으로 대체</span>
+                <button class="copy-btn">복사</button>
+            </div>
+            <pre># 수치형 컬럼의 결측치를 평균으로 대체
+df['컬럼명'] = df['컬럼명'].fillna(df['컬럼명'].mean())
+
+# 범주형 컬럼의 결측치를 최빈값으로 대체
+df['컬럼명'] = df['컬럼명'].fillna(df['컬럼명'].mode()[0])</pre>
+        </div>
+    </div>
+
+    <!-- 이상치 처리 -->
+    <div class="section">
+        <h3 class="section-title">이상치(Outlier) 처리</h3>
+        <div class="info-box" style="margin-bottom:12px;">
+            <strong>이상치란?</strong> 다른 데이터와 크게 벗어난 값입니다. 예: 나이가 999, 온도가 -100 등. 이상치를 그냥 두면 모델 성능이 크게 저하됩니다.
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python — IQR 방법으로 이상치 제거</span>
+                <button class="copy-btn">복사</button>
+            </div>
+            <pre># IQR(사분위수 범위) 방법
+Q1 = df['컬럼명'].quantile(0.25)
+Q3 = df['컬럼명'].quantile(0.75)
+IQR = Q3 - Q1
+
+# 이상치 기준: Q1 - 1.5*IQR 미만 또는 Q3 + 1.5*IQR 초과
+df_clean = df[(df['컬럼명'] >= Q1 - 1.5 * IQR) &
+              (df['컬럼명'] <= Q3 + 1.5 * IQR)]
+
+print("이상치 제거 전:", df.shape)
+print("이상치 제거 후:", df_clean.shape)</pre>
+        </div>
+
+        <div class="code-block" style="margin-top:10px;">
+            <div class="code-header">
+                <span>Python — 박스플롯으로 이상치 시각화</span>
+                <button class="copy-btn">복사</button>
+            </div>
+            <pre>import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10, 4))
+df.boxplot()
+plt.xticks(rotation=45)
+plt.title('컬럼별 이상치 확인')
+plt.tight_layout()
+plt.show()</pre>
+        </div>
+    </div>
+
+    <!-- 전처리 후 최종 확인 -->
+    <div class="section">
+        <h3 class="section-title">전처리 후 최종 확인</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python — 전처리 완료 확인</span>
+                <button class="copy-btn">복사</button>
+            </div>
+            <pre>print("최종 데이터 크기:", df_clean.shape)
+print("\n결측치 확인:")
+print(df_clean.isnull().sum())
+print("\n기초 통계:")
+print(df_clean.describe())</pre>
+        </div>
+    </div>
+
+    <!-- 학생 입력 + 체크포인트 + 네비 -->
+    <form method="POST" id="stage3_step3_form">
+        <div class="section">
+            <h3 class="section-title">전처리 방법 기록</h3>
+
+            <div class="form-group">
+                <label class="form-label">결측치 처리 방법</label>
+                <textarea class="form-control" name="missing_handling" rows="3"
+                          placeholder="예: 결측치가 있는 5개 행을 dropna()로 제거했다. 전체 1462행 중 결측치는 0.3%로 적어서 제거 방법을 선택했다.">{{ idea.missing_handling if idea and idea.missing_handling else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">이상치 처리 방법</label>
+                <textarea class="form-control" name="outlier_handling" rows="3"
+                          placeholder="예: temp 컬럼에서 IQR 방법으로 이상치 3개를 제거했다. 박스플롯으로 확인했을 때 극단값이 존재했다.">{{ idea.outlier_handling if idea and idea.outlier_handling else '' }}</textarea>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+                <button type="submit" name="save_action" value="save_only"
+                        class="btn btn-secondary" style="padding:10px 24px; font-size:14px;">
+                    💾 저장하기
+                </button>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div style="font-size:13px; color:#059669; font-weight:600; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 14px;">
+                    ✓ {{ message }}
+                </div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 전처리 과정 이해 확인</div>
+            <div class="checkpoint-question">데이터 전처리 과정에 대해 다음 두 가지 질문에 답해보세요.
+
+1. 결측치가 있는 데이터를 그냥 두면 어떤 문제가 생길 수 있나요?
+2. 여러분이 선택한 결측치/이상치 처리 방법이 왜 적절한지 이유를 설명해보세요.</div>
+
+            <div class="chat-box" id="chat_3_3"></div>
+            <textarea id="answer_3_3" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_3_3" class="btn btn-success"
+                        onclick="submitCheckpoint(3, 3, 'submit_3_3', 'chat_3_3', 'next_3_3')">제출하기</button>
+                <button type="button" id="complete_3_3" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(3, 3, 'next_3_3')">&#10003; 이해했습니다</button>
+            </div>
+            <div class="step-nav" style="margin-top:16px;">
+                <a href="{{ url_for('student.stage3_step', step=2) }}" class="btn btn-secondary">← 이전</a>
+                {% if already_completed %}
+                <button type="submit" class="btn btn-success">저장하고 완료 →</button>
+                {% else %}
+                <button type="submit" id="next_3_3" class="btn btn-primary" disabled style="display:none">3단계 완료 →</button>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- AI 코드 도우미 사이드바 -->
+<button id="ai-sidebar-toggle" onclick="toggleSidebar()">💬
+AI
+도우미</button>
+
+<div id="ai-code-sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-header-title">💻 AI 코드 도우미</div>
+        <button class="sidebar-close-btn" onclick="toggleSidebar()">✕</button>
+    </div>
+    <div class="sidebar-desc">
+        코드 실행 중 오류나 궁금한 점을 질문하세요.<br>
+        오류 메시지를 그대로 붙여넣으면 더 정확하게 도와드립니다.
+    </div>
+    <div id="sidebar-chat-box"></div>
+    <div class="sidebar-input-area">
+        <textarea id="sidebar-input" placeholder="예: IQR 방법에서 Q1, Q3가 무엇인지 설명해 주세요."></textarea>
+        <button id="sidebar-send-btn" onclick="submitSidebarChat()">전송하기</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+SIDEBAR_STAGE = 3;
+SIDEBAR_STEP = 3;
+loadChatHistory(3, 3, 'chat_3_3');
+</script>
+{% endblock %}

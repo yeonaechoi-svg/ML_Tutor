@@ -16,7 +16,7 @@
 <!-- 통계 카드 -->
 <div class="grid-3" style="margin-bottom:28px;">
     <div class="stat-card">
-        <div class="stat-number">{{ completed_s1|length + completed_s2|length }}</div>
+        <div class="stat-number">{{ completed_s1|length + completed_s2|length + completed_s3|length }}</div>
         <div class="stat-label">완료한 학습 단계</div>
     </div>
     <div class="stat-card">
@@ -163,20 +163,57 @@
             {% endif %}
         </div>
 
-        <!-- ── 3~7단계 (준비 예정) ── -->
-        {% set upcoming = [
-            (3, '데이터 탐색과 전처리',        '📦', '공공데이터 수집 및 결측치·이상치 처리'),
-            (4, '알고리즘 선정',               '⚙️',  '주제에 맞는 기계학습 알고리즘 선택'),
-            (5, '모델 생성',                   '🤖', '훈련/테스트 분리 후 모델 학습'),
-            (6, '성능 평가 및 예측',            '📊', '정확도 확인 및 테스트 데이터 예측'),
-            (7, '자기평가 및 동료 평가',        '⭐', '체크리스트 기반 자기·동료 평가')
+        <!-- ── 3단계 ── -->
+        {% set s3_done_count = completed_s3|length %}
+        {% set s3_complete = s3_done_count >= 3 %}
+        {% set s3_locked = current_stage < 3 %}
+        <div style="border:1.5px solid {% if s3_complete %}#6ee7b7{% elif current_stage == 3 %}#a5b4fc{% else %}#e2e8f0{% endif %}; border-radius:12px; overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px;
+                        background:{% if s3_complete %}#f0fdf4{% elif current_stage == 3 %}#eef2ff{% else %}#f8fafc{% endif %};">
+                <div style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; flex-shrink:0;
+                            background:{% if s3_complete %}linear-gradient(135deg,#059669,#10b981){% elif current_stage == 3 %}linear-gradient(135deg,#4F46E5,#7C3AED){% else %}#e2e8f0{% endif %};
+                            color:{% if s3_complete or current_stage == 3 %}#fff{% else %}#94a3b8{% endif %};">
+                    {% if s3_complete %}✓{% else %}3{% endif %}
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:14px; font-weight:700; color:{% if s3_locked %}#94a3b8{% else %}#1e293b{% endif %};">3단계 — 데이터 탐색과 전처리</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                        {% if s3_locked %}2단계 완료 후 진행 가능{% else %}{{ s3_done_count }}/3 완료{% endif %}
+                    </div>
+                </div>
+                {% if s3_complete %}<span class="badge badge-green">완료</span>
+                {% elif current_stage == 3 %}<span class="badge badge-blue">진행 중</span>
+                {% elif s3_locked %}<span class="badge badge-gray">🔒 잠금</span>
+                {% else %}<span class="badge badge-gray">대기</span>{% endif %}
+                {% if not s3_locked %}
+                <a href="{{ url_for('student.stage3') }}" style="font-size:12px; color:#4F46E5; text-decoration:none; font-weight:600; flex-shrink:0;">바로가기 →</a>
+                {% endif %}
+            </div>
+            {% if not s3_locked %}
+            <div style="padding:10px 16px 14px; display:flex; flex-direction:column; gap:6px; border-top:1px solid #f1f5f9;">
+                {% for num, title, icon in [(1,'데이터 수집','📦'),(2,'데이터 탐색','🔍'),(3,'데이터 전처리','🧹')] %}
+                {% set done = num in completed_s3 %}
+                <div style="display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:8px; background:{% if done %}#f0fdf4{% else %}#f8fafc{% endif %};">
+                    <span style="font-size:13px; color:{% if done %}#059669{% else %}#94a3b8{% endif %}; font-weight:700; width:16px; text-align:center;">{% if done %}✓{% else %}{{ num }}{% endif %}</span>
+                    <span style="font-size:13px;">{{ icon }}</span>
+                    <a href="{{ url_for('student.stage3_step', step=num) }}" style="font-size:13px; text-decoration:none; color:{% if done %}#065f46{% else %}#374151{% endif %}; font-weight:{% if done %}600{% else %}400{% endif %};">{{ title }}</a>
+                    {% if done %}<span class="badge badge-green" style="font-size:10px; padding:2px 8px; margin-left:auto;">완료</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ── 4~7단계 (준비 예정) ── -->
+        {% for num, title, icon, desc in [
+            (4, '알고리즘 선정',        '⚙️', '주제에 맞는 기계학습 알고리즘 선택'),
+            (5, '모델 생성',            '🤖', '훈련/테스트 분리 후 모델 학습'),
+            (6, '성능 평가 및 예측',    '📊', '정확도 확인 및 테스트 데이터 예측'),
+            (7, '자기평가 및 동료 평가','⭐', '체크리스트 기반 자기·동료 평가')
         ] %}
-        {% for num, title, icon, desc in upcoming %}
         <div style="border:1.5px solid #e2e8f0; border-radius:12px; overflow:hidden; opacity:0.65;">
             <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; background:#f8fafc;">
-                <div style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; flex-shrink:0; background:#e2e8f0; color:#94a3b8;">
-                    {{ num }}
-                </div>
+                <div style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; flex-shrink:0; background:#e2e8f0; color:#94a3b8;">{{ num }}</div>
                 <div style="flex:1;">
                     <div style="font-size:14px; font-weight:700; color:#94a3b8;">{{ num }}단계 — {{ title }}</div>
                     <div style="font-size:12px; color:#b0bec5; margin-top:2px;">{{ icon }} {{ desc }}</div>
@@ -197,6 +234,10 @@
         {% elif current_stage == 2 %}
             <a href="{{ url_for('student.stage2') }}" class="btn btn-primary" style="padding:12px 32px;">
                 2단계 학습 계속하기 →
+            </a>
+        {% elif current_stage == 3 %}
+            <a href="{{ url_for('student.stage3') }}" class="btn btn-primary" style="padding:12px 32px;">
+                3단계 학습 계속하기 →
             </a>
         {% else %}
             <p style="color:#10b981; font-weight:600;">🎉 구현된 단계를 모두 완료했습니다! 수고했어요.</p>

@@ -114,6 +114,14 @@ class ProjectIdea(db.Model):
     output_target = db.Column(db.String(200))
     ml_type = db.Column(db.String(50))
     ml_reason = db.Column(db.Text)
+    # 3단계: 데이터 탐색과 전처리
+    data_source = db.Column(db.Text)        # 데이터 출처 URL
+    file_name = db.Column(db.String(200))   # 파일명
+    data_rows = db.Column(db.String(50))    # 행 수
+    data_cols = db.Column(db.String(50))    # 열 수
+    column_list = db.Column(db.Text)        # 컬럼 목록
+    missing_handling = db.Column(db.Text)   # 결측치 처리 방법
+    outlier_handling = db.Column(db.Text)   # 이상치 처리 방법
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('project_idea', uselist=False))

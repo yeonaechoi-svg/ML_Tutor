@@ -123,6 +123,70 @@ function appendFeedback(chatBoxId, content) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+/* ── AI Code Help Sidebar ── */
+var SIDEBAR_STAGE = 0;
+var SIDEBAR_STEP = 0;
+
+function toggleSidebar() {
+    var sidebar = document.getElementById('ai-code-sidebar');
+    var toggle = document.getElementById('ai-sidebar-toggle');
+    if (!sidebar || !toggle) return;
+    sidebar.classList.toggle('open');
+    if (sidebar.classList.contains('open')) {
+        toggle.style.right = '360px';
+        toggle.innerHTML = '✕ 닫기';
+        toggle.style.writingMode = 'horizontal-tb';
+        toggle.style.padding = '10px 8px';
+        toggle.style.borderRadius = '10px 0 0 10px';
+    } else {
+        toggle.style.right = '0';
+        toggle.innerHTML = '💬\nAI\n도우미';
+        toggle.style.writingMode = 'vertical-rl';
+        toggle.style.padding = '16px 9px';
+    }
+}
+
+function submitSidebarChat() {
+    var input = document.getElementById('sidebar-input');
+    if (!input) return;
+    var question = input.value.trim();
+    if (!question) { alert('질문을 입력해주세요.'); return; }
+
+    var chatBox = document.getElementById('sidebar-chat-box');
+    var sendBtn = document.getElementById('sidebar-send-btn');
+
+    var userBubble = document.createElement('div');
+    userBubble.className = 'chat-bubble user';
+    userBubble.textContent = question;
+    chatBox.appendChild(userBubble);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    input.value = '';
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span class="spinner"></span> AI 응답 중...';
+
+    fetch('/ai-tutor/code-help', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: SIDEBAR_STAGE, step: SIDEBAR_STEP, question: question })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '전송하기';
+        if (data.answer) {
+            appendFeedback('sidebar-chat-box', data.answer);
+        } else {
+            appendFeedback('sidebar-chat-box', '오류가 발생했습니다: ' + (data.error || '다시 시도해주세요.'));
+        }
+    })
+    .catch(function() {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '전송하기';
+        appendFeedback('sidebar-chat-box', '네트워크 오류가 발생했습니다. 다시 시도해주세요.');
+    });
+}
+
 function completeCheckpoint(stage, substep, nextBtnId) {
     var nextBtn = document.getElementById(nextBtnId);
     if (nextBtn) {

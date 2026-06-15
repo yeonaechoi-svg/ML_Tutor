@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from flask_login import login_required, current_user
 from app.ai_tutor import ai_tutor_bp
-from app.ai_tutor.prompts import SYSTEM_PROMPT, get_checkpoint
+from app.ai_tutor.prompts import SYSTEM_PROMPT, CODE_HELP_SYSTEM_PROMPT, get_checkpoint
 from app.models import ChatLog
 from app import db
 import anthropic
@@ -183,6 +183,51 @@ def suggest_ml_solutions():
         return jsonify({'solutions': solutions})
     except Exception as e:
         return jsonify({'error': f'AI 오류: {str(e)}'}), 500
+
+
+@ai_tutor_bp.route('/code-help', methods=['POST'])
+@login_required
+def code_help():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': '요청 데이터가 없습니다.'}), 400
+
+    stage = data.get('stage', 0)
+    step = data.get('step', 0)
+    question = (data.get('question') or '').strip()
+
+    if not question:
+        return jsonify({'error': '질문을 입력해주세요.'}), 400
+
+    try:
+        client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
+        response = client.messages.create(
+            model='claude-sonnet-4-6',
+            max_tokens=700,
+            system=CODE_HELP_SYSTEM_PROMPT,
+            messages=[{'role': 'user', 'content': question}]
+        )
+        answer = response.content[0].text
+    except anthropic.APIError as e:
+        return jsonify({'error': f'AI 오류: {str(e)}'}), 500
+    except Exception:
+        return jsonify({'error': 'AI에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.'}), 500
+
+    try:
+        session_id = f"{current_user.id}_{stage}_{step}_help"
+        db.session.add(ChatLog(
+            user_id=current_user.id, stage=stage, substep=0,
+            session_id=session_id, role='user', content=question
+        ))
+        db.session.add(ChatLog(
+            user_id=current_user.id, stage=stage, substep=0,
+            session_id=session_id, role='assistant', content=answer
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    return jsonify({'answer': answer})
 
 
 @ai_tutor_bp.route('/history', methods=['GET'])
