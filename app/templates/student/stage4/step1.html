@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% block title %}4단계 — 알고리즘 선택{% endblock %}
+
+{% block content %}
+{% set algo_label = {
+    'linear_regression': '선형 회귀',
+    'decision_tree': '의사결정 트리',
+    'random_forest': '랜덤 포레스트',
+    'knn': 'KNN',
+    'kmeans': 'K-평균'
+} %}
+
+<div class="card">
+    <h2 class="card-title">4단계 — 기계학습 유형과 알고리즘 선정</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'알고리즘 선택'),(2,'선정 이유 작성')] %}
+        <a href="{{ url_for('student.stage4_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none; cursor:pointer;
+            {% if i == 1 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 1 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 알고리즘을 변경하고 저장할 수 있습니다.</div>
+    {% endif %}
+
+    <!-- 나의 주제 & 유형 -->
+    {% if idea %}
+    <div class="info-box" style="margin-bottom:24px;">
+        {% if idea.topic %}<strong>주제:</strong> {{ idea.topic }}&nbsp;&nbsp;{% endif %}
+        {% if idea.ml_type %}
+        <strong>유형:</strong>
+        {% if idea.ml_type == 'regression' %}📈 회귀 (Regression)
+        {% elif idea.ml_type == 'classification' %}🏷️ 분류 (Classification)
+        {% elif idea.ml_type == 'clustering' %}🔵 군집 (Clustering){% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <form method="POST" id="stage4_step1_form">
+        <input type="hidden" name="algorithm" id="algorithm_input"
+               value="{{ idea.algorithm if idea and idea.algorithm else '' }}">
+
+        <div class="section">
+            <h3 class="section-title">나의 프로젝트에 맞는 알고리즘 선택</h3>
+            <p style="font-size:14px; color:#475569; margin-bottom:18px; line-height:1.8;">
+                1단계에서 배운 알고리즘 중 나의 프로젝트에 가장 적합한 알고리즘을 선택하세요.<br>
+                카드를 클릭하면 알고리즘의 상세 설명을 볼 수 있습니다.
+            </p>
+
+            <!-- ── 회귀: 선형 회귀 1개 ── -->
+            {% if not idea or not idea.ml_type or idea.ml_type == 'regression' %}
+            <div class="algo-cards" style="grid-template-columns: repeat(auto-fill, minmax(240px, 320px)); max-width:340px;">
+                <div class="algo-card {% if idea and idea.algorithm == 'linear_regression' %}selected{% endif %}"
+                     data-algo="linear_regression" onclick="selectAlgo(this)"
+                     style="border-top:3px solid #6366F1;">
+                    <span class="algo-card-check">✓ 선택됨</span>
+                    <div class="algo-card-icon">📈</div>
+                    <div class="algo-card-name">선형 회귀</div>
+                    <div class="algo-card-en">Linear Regression</div>
+                    <div class="algo-card-desc">입력 변수와 출력 변수의 선형 관계를 학습하여 연속적인 수치를 예측합니다.</div>
+                    <div class="algo-card-pros">✓ 해석이 쉽고 학습이 빠름</div>
+                    <div class="algo-card-cons">✗ 비선형 관계 표현 어려움</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ── 분류: 3개 알고리즘 ── -->
+            {% if not idea or not idea.ml_type or idea.ml_type == 'classification' %}
+            <div class="algo-cards" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="algo-card {% if idea and idea.algorithm == 'decision_tree' %}selected{% endif %}"
+                     data-algo="decision_tree" onclick="selectAlgo(this)"
+                     style="border-top:3px solid #10b981;">
+                    <span class="algo-card-check">✓ 선택됨</span>
+                    <div class="algo-card-icon">🌳</div>
+                    <div class="algo-card-name">의사결정 트리</div>
+                    <div class="algo-card-en">Decision Tree</div>
+                    <div class="algo-card-desc">질문(조건)으로 데이터를 나누어 분류 트리를 만듭니다.</div>
+                    <div class="algo-card-pros">✓ 결과 해석 쉬움</div>
+                    <div class="algo-card-cons">✗ 과적합 위험 있음</div>
+                </div>
+                <div class="algo-card {% if idea and idea.algorithm == 'random_forest' %}selected{% endif %}"
+                     data-algo="random_forest" onclick="selectAlgo(this)"
+                     style="border-top:3px solid #10b981;">
+                    <span class="algo-card-check">✓ 선택됨</span>
+                    <div class="algo-card-icon">🌲</div>
+                    <div class="algo-card-name">랜덤 포레스트</div>
+                    <div class="algo-card-en">Random Forest</div>
+                    <div class="algo-card-desc">여러 의사결정 트리의 결과를 종합하여 분류합니다.</div>
+                    <div class="algo-card-pros">✓ 높은 정확도</div>
+                    <div class="algo-card-cons">✗ 학습 속도 느림</div>
+                </div>
+                <div class="algo-card {% if idea and idea.algorithm == 'knn' %}selected{% endif %}"
+                     data-algo="knn" onclick="selectAlgo(this)"
+                     style="border-top:3px solid #10b981;">
+                    <span class="algo-card-check">✓ 선택됨</span>
+                    <div class="algo-card-icon">👥</div>
+                    <div class="algo-card-name">KNN</div>
+                    <div class="algo-card-en">K-Nearest Neighbors</div>
+                    <div class="algo-card-desc">가장 가까운 k개 이웃의 유형을 참고하여 분류합니다.</div>
+                    <div class="algo-card-pros">✓ 구현 단순</div>
+                    <div class="algo-card-cons">✗ 데이터 많으면 느림</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ── 군집: K-평균 1개 ── -->
+            {% if not idea or not idea.ml_type or idea.ml_type == 'clustering' %}
+            <div class="algo-cards" style="grid-template-columns: repeat(auto-fill, minmax(240px, 320px)); max-width:340px;">
+                <div class="algo-card {% if idea and idea.algorithm == 'kmeans' %}selected{% endif %}"
+                     data-algo="kmeans" onclick="selectAlgo(this)"
+                     style="border-top:3px solid #f59e0b;">
+                    <span class="algo-card-check">✓ 선택됨</span>
+                    <div class="algo-card-icon">🔵</div>
+                    <div class="algo-card-name">K-평균</div>
+                    <div class="algo-card-en">K-Means</div>
+                    <div class="algo-card-desc">데이터를 k개의 군집으로 자동으로 나눕니다. 정답 레이블이 없어도 됩니다.</div>
+                    <div class="algo-card-pros">✓ 정답 없이 그룹화 가능</div>
+                    <div class="algo-card-cons">✗ k값을 직접 정해야 함</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 선택 후 상세 설명 박스 -->
+            <div id="algo-detail-box" class="algo-detail-box {% if idea and idea.algorithm %}visible{% endif %}">
+                <div id="algo-detail-content"></div>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage3') }}" class="btn btn-secondary">← 3단계</a>
+            {% if already_completed %}
+            <button type="submit" class="btn btn-primary">저장하고 다음으로 →</button>
+            {% else %}
+            <button type="submit" id="next_4_1" class="btn btn-primary"
+                    {% if not (idea and idea.algorithm) %}disabled style="display:none"{% endif %}>
+                다음: 선정 이유 작성 →
+            </button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var algoDetails = {
+    'linear_regression': {
+        icon: '📈', title: '선형 회귀 (Linear Regression)',
+        when: '목표값이 연속적인 수치(가격, 온도, 대여량 등)를 예측할 때',
+        how: '입력 변수(X)와 출력 변수(y) 사이의 선형 관계를 학습하여 예측선(회귀선)을 만듭니다.',
+        tip: '입력 변수가 여러 개여도 사용할 수 있어요 (다중 선형 회귀).'
+    },
+    'decision_tree': {
+        icon: '🌳', title: '의사결정 트리 (Decision Tree)',
+        when: '분류 기준을 명확히 설명해야 할 때, 데이터가 비교적 단순할 때',
+        how: '데이터를 조건(if-then)으로 나누어 트리 구조를 만들고, 마지막 노드에서 분류를 결정합니다.',
+        tip: 'max_depth 파라미터로 트리 깊이를 제한하면 과적합을 예방할 수 있어요.'
+    },
+    'random_forest': {
+        icon: '🌲', title: '랜덤 포레스트 (Random Forest)',
+        when: '높은 정확도가 필요하고 과적합을 피하고 싶을 때',
+        how: '여러 개의 의사결정 트리를 만들어 각각의 예측 결과를 다수결로 종합합니다.',
+        tip: 'n_estimators로 트리 수를 조절해요. 많을수록 안정적이지만 학습이 느려집니다.'
+    },
+    'knn': {
+        icon: '👥', title: 'KNN (K-최근접 이웃, K-Nearest Neighbors)',
+        when: '데이터가 너무 많지 않고, 구현이 간단해야 할 때',
+        how: '새로운 데이터와 가장 가까운 k개의 이웃을 찾아, 이웃들의 분류 결과를 참고합니다.',
+        tip: 'k값은 홀수로 설정하면 동점이 없어요. 보통 k=3~7부터 시작해보세요.'
+    },
+    'kmeans': {
+        icon: '🔵', title: 'K-평균 (K-Means)',
+        when: '데이터를 k개의 그룹으로 자동으로 나누고 싶을 때 (정답 레이블 없음)',
+        how: '랜덤으로 k개의 중심점을 설정하고, 각 데이터를 가장 가까운 중심점의 그룹에 배치합니다. 중심점을 반복 업데이트합니다.',
+        tip: 'Elbow Method로 적절한 k값(군집 수)을 찾을 수 있어요.'
+    }
+};
+
+function selectAlgo(card) {
+    document.querySelectorAll('.algo-card').forEach(function(c) { c.classList.remove('selected'); });
+    card.classList.add('selected');
+    var algo = card.getAttribute('data-algo');
+    document.getElementById('algorithm_input').value = algo;
+    var btn = document.getElementById('next_4_1');
+    if (btn) { btn.disabled = false; btn.style.display = 'inline-flex'; }
+    showAlgoDetail(algo);
+}
+
+function showAlgoDetail(algo) {
+    var d = algoDetails[algo];
+    if (!d) return;
+    var box = document.getElementById('algo-detail-box');
+    var content = document.getElementById('algo-detail-content');
+    content.innerHTML =
+        '<div class="algo-detail-title">' + d.icon + ' ' + d.title + '</div>' +
+        '<div class="algo-detail-row"><strong>언제 사용:</strong> ' + d.when + '</div>' +
+        '<div class="algo-detail-row"><strong>동작 원리:</strong> ' + d.how + '</div>' +
+        '<div class="algo-detail-tip">💡 ' + d.tip + '</div>';
+    box.classList.add('visible');
+}
+
+// 이미 저장된 알고리즘 복원
+{% if idea and idea.algorithm %}
+(function() {
+    var algo = '{{ idea.algorithm }}';
+    var card = document.querySelector('[data-algo="' + algo + '"]');
+    if (card) { card.classList.add('selected'); }
+    showAlgoDetail(algo);
+})();
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block title %}4단계 — 선정 이유 작성{% endblock %}
+
+{% block content %}
+{% set algo_info = {
+    'linear_regression': ('📈', '선형 회귀 (Linear Regression)', '입력 변수와 출력 변수의 선형 관계를 학습하여 연속적인 수치를 예측합니다.'),
+    'decision_tree':     ('🌳', '의사결정 트리 (Decision Tree)', '조건(if-then)으로 데이터를 나누어 분류 트리를 만들고 결과를 예측합니다.'),
+    'random_forest':     ('🌲', '랜덤 포레스트 (Random Forest)', '여러 의사결정 트리를 만들어 각각의 결과를 다수결로 종합합니다.'),
+    'knn':               ('👥', 'KNN (K-최근접 이웃)', '가장 가까운 k개 이웃의 분류 결과를 참고하여 새 데이터를 분류합니다.'),
+    'kmeans':            ('🔵', 'K-평균 (K-Means)', '데이터를 k개의 군집으로 자동으로 나눕니다. 정답 레이블이 없어도 됩니다.')
+} %}
+
+<div class="card">
+    <h2 class="card-title">4단계 — 기계학습 유형과 알고리즘 선정</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'알고리즘 선택'),(2,'선정 이유 작성')] %}
+        <a href="{{ url_for('student.stage4_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none; cursor:pointer;
+            {% if i == 2 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 2 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 내용을 수정하고 저장할 수 있습니다.</div>
+    {% endif %}
+
+    <!-- 선택한 알고리즘 표시 -->
+    {% if idea and idea.algorithm and idea.algorithm in algo_info %}
+    {% set a_icon, a_name, a_desc = algo_info[idea.algorithm] %}
+    <div style="background:linear-gradient(135deg,#eef2ff,#f5f3ff); border:1.5px solid #c7d2fe; border-radius:12px; padding:18px 20px; margin-bottom:24px; display:flex; align-items:center; gap:14px;">
+        <div style="font-size:32px; flex-shrink:0;">{{ a_icon }}</div>
+        <div>
+            <div style="font-size:13px; color:#6366F1; font-weight:700; margin-bottom:4px;">선택한 알고리즘</div>
+            <div style="font-size:16px; font-weight:800; color:#1e293b; margin-bottom:6px;">{{ a_name }}</div>
+            <div style="font-size:13px; color:#475569; line-height:1.6;">{{ a_desc }}</div>
+        </div>
+        <a href="{{ url_for('student.stage4_step', step=1) }}"
+           style="margin-left:auto; font-size:12px; color:#6366F1; text-decoration:none; font-weight:600; flex-shrink:0; border:1px solid #c7d2fe; border-radius:8px; padding:6px 12px; background:#fff;">
+            변경하기
+        </a>
+    </div>
+    {% else %}
+    <div class="warning-box" style="margin-bottom:20px;">
+        ⚠️ 먼저 <a href="{{ url_for('student.stage4_step', step=1) }}" style="color:#92400e; font-weight:700;">스텝 1</a>에서 알고리즘을 선택해주세요.
+    </div>
+    {% endif %}
+
+    <form method="POST" id="stage4_step2_form">
+        <div class="section">
+            <h3 class="section-title">알고리즘 선정 이유 작성</h3>
+            <p style="font-size:14px; color:#475569; margin-bottom:14px; line-height:1.8;">
+                이 알고리즘을 선택한 이유를 아래에 작성해주세요.<br>
+                나의 프로젝트 주제 및 데이터와 연결하여 설명하면 더욱 좋습니다.
+            </p>
+
+            <div class="info-box" style="margin-bottom:16px;">
+                <strong>작성 가이드</strong><br>
+                • 왜 이 알고리즘이 나의 데이터/주제에 적합한가요?<br>
+                • 다른 알고리즘과 비교했을 때 어떤 장점이 있나요?<br>
+                • 예상되는 어려움이나 주의해야 할 점은 무엇인가요?
+            </div>
+
+            {% set algo_placeholders = {
+                'linear_regression': '예시) 선형 회귀를 선택한 이유는, 내 프로젝트의 목표가 연속적인 수치(예: 기온에 따른 자전거 대여량)를 예측하는 것이기 때문입니다. 기온·습도·계절 같은 입력 변수들이 대여량에 선형적인 영향을 줄 것으로 예상되고, 결과를 수식으로 해석할 수 있어 발표 시 설명하기도 쉽다는 장점이 있습니다.',
+                'decision_tree': '예시) 의사결정 트리를 선택한 이유는, 분류 결과를 트리 구조로 시각화할 수 있어 이해하기 쉽기 때문입니다. 내 데이터는 특성이 비교적 단순하여 트리가 너무 깊어지지 않을 것 같고, 각 분류 기준(조건)을 직접 확인할 수 있어 프로젝트 결과를 설명할 때 유리합니다.',
+                'random_forest': '예시) 랜덤 포레스트를 선택한 이유는, 내 데이터가 여러 특성이 복잡하게 얽혀 있어 단순한 의사결정 트리보다 여러 트리의 결과를 종합하는 방식이 더 정확할 것이라고 판단했기 때문입니다. 또한 과적합 위험이 낮아 실제 테스트 데이터에서도 안정적인 성능을 낼 것으로 기대합니다.',
+                'knn': '예시) KNN을 선택한 이유는, 구현이 간단하고 내 데이터 규모가 크지 않아 예측 속도 문제가 적을 것이기 때문입니다. 별도의 복잡한 학습 과정 없이 새로운 데이터와 가장 유사한 기존 데이터를 찾아 분류하는 직관적인 방식이 내 주제에 잘 맞는다고 생각했습니다.',
+                'kmeans': '예시) K-평균을 선택한 이유는, 내 프로젝트 목표가 데이터를 유사한 그룹으로 나누는 것이기 때문입니다. 정해진 정답(레이블) 없이 데이터의 특성만으로 그룹을 자동으로 구분할 수 있어 비지도학습 방식이 내 주제에 적합하다고 판단했습니다.'
+            } %}
+            {% set current_placeholder = algo_placeholders.get(idea.algorithm if idea and idea.algorithm else '', '나의 프로젝트 주제와 연결하여 이 알고리즘을 선택한 이유를 작성해주세요.') %}
+
+            <div class="form-group">
+                <label class="form-label">선정 이유</label>
+                <textarea class="form-control" name="algorithm_reason" rows="6"
+                          placeholder="{{ current_placeholder }}">{{ idea.algorithm_reason if idea and idea.algorithm_reason else '' }}</textarea>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+                <button type="submit" name="save_action" value="save_only"
+                        class="btn btn-secondary" style="padding:10px 24px; font-size:14px;">
+                    💾 저장하기
+                </button>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div style="font-size:13px; color:#059669; font-weight:600; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 14px;">
+                    ✓ {{ message }}
+                </div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 알고리즘 이해 확인</div>
+            <div class="checkpoint-question">선택한 알고리즘에 대해 다음 두 가지 질문에 답해보세요.
+
+1. 선택한 알고리즘의 동작 원리를 자신의 말로 설명해보세요.
+2. 다른 알고리즘 대신 이 알고리즘을 선택한 이유를 프로젝트 주제와 연결하여 설명해보세요.</div>
+
+            <div class="chat-box" id="chat_4_2"></div>
+            <textarea id="answer_4_2" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_4_2" class="btn btn-success"
+                        onclick="submitCheckpoint(4, 2, 'submit_4_2', 'chat_4_2', 'next_4_2')">제출하기</button>
+                <button type="button" id="complete_4_2" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(4, 2, 'next_4_2')">&#10003; 이해했습니다</button>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage4_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+            {% if already_completed %}
+            <button type="submit" class="btn btn-success">저장하고 완료 →</button>
+            {% else %}
+            <button type="submit" id="next_4_2" class="btn btn-primary" disabled style="display:none">4단계 완료 →</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+loadChatHistory(4, 2, 'chat_4_2');
+</script>
+{% endblock %}

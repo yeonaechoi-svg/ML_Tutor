@@ -163,6 +163,32 @@ CHECKPOINTS.update({
 })
 
 
+ALGO_NAMES = {
+    'linear_regression': '선형 회귀 (Linear Regression)',
+    'decision_tree': '의사결정 트리 (Decision Tree)',
+    'random_forest': '랜덤 포레스트 (Random Forest)',
+    'knn': 'KNN (K-최근접 이웃)',
+    'kmeans': 'K-평균 (K-Means)',
+}
+
+
+CHECKPOINTS.update({
+    (4, 2): {
+        'question': (
+            "선택한 알고리즘에 대해 다음 두 가지 질문에 답해보세요.\n\n"
+            "1. 선택한 알고리즘의 동작 원리를 자신의 말로 설명해보세요.\n"
+            "2. 다른 알고리즘 대신 이 알고리즘을 선택한 이유를 "
+            "프로젝트 주제와 연결하여 설명해보세요."
+        ),
+        'context': (
+            "학생이 자신의 기계학습 프로젝트에 사용할 알고리즘을 선정했습니다. "
+            "선택한 알고리즘의 이해도와 선정 이유의 논리적 타당성을 확인하고, "
+            "5단계(모델 생성) 준비가 되도록 유도하세요."
+        )
+    },
+})
+
+
 CODE_HELP_SYSTEM_PROMPT = """당신은 고등학교 기계학습 수업에서 코드 오류를 도와주는 AI 도우미입니다.
 
 [역할]

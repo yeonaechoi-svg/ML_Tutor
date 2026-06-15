@@ -122,6 +122,9 @@ class ProjectIdea(db.Model):
     column_list = db.Column(db.Text)        # 컬럼 목록
     missing_handling = db.Column(db.Text)   # 결측치 처리 방법
     outlier_handling = db.Column(db.Text)   # 이상치 처리 방법
+    # 4단계: 알고리즘 선정
+    algorithm = db.Column(db.String(50))    # linear_regression / decision_tree / random_forest / knn / kmeans
+    algorithm_reason = db.Column(db.Text)   # 선정 이유
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('project_idea', uselist=False))

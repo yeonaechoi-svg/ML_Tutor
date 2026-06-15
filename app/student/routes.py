@@ -40,6 +40,7 @@ def dashboard():
     completed_s1 = get_completed_substeps(1)
     completed_s2 = get_completed_substeps(2)
     completed_s3 = get_completed_substeps(3)
+    completed_s4 = get_completed_substeps(4)
     quiz_result = QuizResult.query.filter_by(
         user_id=current_user.id, stage=1
     ).order_by(QuizResult.created_at.desc()).first()
@@ -48,7 +49,10 @@ def dashboard():
     s1_done = len(completed_s1) >= 7
     s2_done = len(completed_s2) >= 3
     s3_done = len(completed_s3) >= 3
-    if s3_done:
+    s4_done = len(completed_s4) >= 2
+    if s4_done:
+        current_stage = 5
+    elif s3_done:
         current_stage = 4
     elif s2_done:
         current_stage = 3
@@ -63,6 +67,7 @@ def dashboard():
         completed_s1=completed_s1,
         completed_s2=completed_s2,
         completed_s3=completed_s3,
+        completed_s4=completed_s4,
         current_stage=current_stage,
         quiz_result=quiz_result,
         idea=idea
@@ -301,6 +306,68 @@ def stage2_step(step):
         1: 'student/stage2/step1.html',
         2: 'student/stage2/step2.html',
         3: 'student/stage2/step3.html',
+    }
+
+    return render_template(
+        template_map[step],
+        step=step,
+        completed=completed,
+        already_completed=(step in completed),
+        idea=idea
+    )
+
+
+# ── 4단계: 기계학습 유형과 알고리즘 선정 ──
+
+@student_bp.route('/stage4')
+@login_required
+def stage4():
+    completed = get_completed_substeps(4)
+    if not completed:
+        return redirect(url_for('student.stage4_step', step=1))
+    next_step = min(max(completed) + 1, 2)
+    return redirect(url_for('student.stage4_step', step=next_step))
+
+
+@student_bp.route('/stage4/step/<int:step>', methods=['GET', 'POST'])
+@login_required
+def stage4_step(step):
+    if step not in range(1, 3):
+        return redirect(url_for('student.stage4_step', step=1))
+
+    completed = get_completed_substeps(4)
+    idea = ProjectIdea.query.filter_by(user_id=current_user.id).first()
+
+    if request.method == 'POST':
+        try:
+            if not idea:
+                idea = ProjectIdea(user_id=current_user.id)
+                db.session.add(idea)
+
+            if step == 1:
+                idea.algorithm = request.form.get('algorithm', '').strip()
+            elif step == 2:
+                idea.algorithm_reason = request.form.get('algorithm_reason', '').strip()
+
+            save_progress(4, step)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        if request.form.get('save_action') == 'save_only':
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': True})
+            flash('저장되었습니다.', 'success')
+            return redirect(url_for('student.stage4_step', step=step))
+
+        if step < 2:
+            return redirect(url_for('student.stage4_step', step=step + 1))
+        flash('4단계를 완료했습니다! 수고했어요.', 'success')
+        return redirect(url_for('student.dashboard'))
+
+    template_map = {
+        1: 'student/stage4/step1.html',
+        2: 'student/stage4/step2.html',
     }
 
     return render_template(
