@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block title %}5단계 — 특성(X)과 타겟(y) 설정{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">5단계 — 기계학습을 통한 모델 생성</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'X/y 설정'),(2,'데이터 분리'),(3,'모델 학습')] %}
+        <a href="{{ url_for('student.stage5_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none;
+            {% if i == 1 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 1 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 수정하고 저장할 수 있습니다.</div>
+    {% endif %}
+
+    <!-- 나의 주제 & 알고리즘 -->
+    {% if idea %}
+    <div class="info-box" style="margin-bottom:20px;">
+        {% if idea.topic %}<strong>주제:</strong> {{ idea.topic }}&nbsp;&nbsp;{% endif %}
+        {% if idea.algorithm %}
+        <strong>알고리즘:</strong>
+        {% if idea.algorithm == 'linear_regression' %}📈 선형 회귀
+        {% elif idea.algorithm == 'decision_tree' %}🌳 의사결정 트리
+        {% elif idea.algorithm == 'random_forest' %}🌲 랜덤 포레스트
+        {% elif idea.algorithm == 'knn' %}👥 KNN
+        {% elif idea.algorithm == 'kmeans' %}🔵 K-평균{% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <form method="POST" id="stage5_step1_form">
+        <div class="section">
+            <h3 class="section-title">특성(X)과 타겟(y) 변수 설정</h3>
+
+            <div class="info-box" style="margin-bottom:20px;">
+                <strong>X와 y란?</strong><br>
+                • <strong>X (특성, Feature)</strong>: 예측에 사용할 입력 데이터 — 여러 컬럼을 선택합니다.<br>
+                • <strong>y (타겟, Target)</strong>: 예측하고 싶은 결과값 — 컬럼 하나를 선택합니다.
+                {% if idea and idea.algorithm == 'kmeans' %}
+                <br>• <strong>K-평균(비지도학습)</strong>은 y(타겟)가 없습니다. X만 설정합니다.
+                {% endif %}
+            </div>
+
+            <!-- 입력 필드 -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div class="form-group">
+                    <label class="form-label">데이터프레임 변수명</label>
+                    <input type="text" class="form-control" id="df_varname" name="df_varname"
+                           value="{{ idea.df_varname if idea and idea.df_varname else 'df' }}"
+                           placeholder="df" oninput="updateCode()">
+                    <div style="font-size:12px; color:#64748b; margin-top:4px;">3단계에서 사용한 변수명</div>
+                </div>
+                {% if not (idea and idea.algorithm == 'kmeans') %}
+                <div class="form-group">
+                    <label class="form-label">타겟 컬럼명 (y) — 예측할 값</label>
+                    <input type="text" class="form-control" id="target_col" name="target_column"
+                           value="{{ idea.target_column if idea and idea.target_column else '' }}"
+                           placeholder="예: 판매량, 등급, 종" oninput="updateCode()">
+                </div>
+                {% else %}
+                <input type="hidden" name="target_column" value="">
+                {% endif %}
+            </div>
+            <div class="form-group" style="margin-bottom:20px;">
+                <label class="form-label">특성 컬럼 목록 (X) — 쉼표로 구분</label>
+                <input type="text" class="form-control" id="feature_cols" name="feature_columns"
+                       value="{{ idea.feature_columns if idea and idea.feature_columns else '' }}"
+                       placeholder="예: 기온, 습도, 강수량" oninput="updateCode()">
+                {% if idea and idea.column_list %}
+                <div style="font-size:12px; color:#64748b; margin-top:4px;">
+                    3단계에서 확인한 컬럼: <span style="color:#4F46E5; font-weight:600;">{{ idea.column_list }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 실시간 코드 블록 -->
+            <div style="background:#1e293b; border-radius:12px; overflow:hidden; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:#0f172a;">
+                    <span style="font-size:12px; color:#94a3b8; font-family:monospace;">Python 코드 (Jupyter에 붙여넣기)</span>
+                    <button type="button" onclick="copyCode('code-xy')"
+                            style="font-size:11px; color:#94a3b8; background:none; border:1px solid #334155; border-radius:6px; padding:3px 10px; cursor:pointer;">복사</button>
+                </div>
+                <pre style="margin:0; padding:16px; font-family:'Consolas','Courier New',monospace; font-size:13px; color:#e2e8f0; white-space:pre; overflow-x:auto; line-height:1.7;"><code id="code-xy"></code></pre>
+            </div>
+            <div style="font-size:12px; color:#6366F1; margin-bottom:20px;">
+                ↑ 위 입력 필드에 값을 입력하면 코드가 자동으로 업데이트됩니다.
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-top:4px;">
+                <button type="submit" name="save_action" value="save_only"
+                        class="btn btn-secondary" style="padding:10px 24px; font-size:14px;">
+                    💾 저장하기
+                </button>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div style="font-size:13px; color:#059669; font-weight:600; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 14px;">✓ {{ message }}</div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — X(특성)과 y(타겟) 이해 확인</div>
+            <div class="checkpoint-question">특성(X)과 타겟(y)에 대해 다음 두 가지 질문에 답해보세요.
+
+1. 기계학습에서 X(특성)와 y(타겟)는 각각 무엇을 의미하나요? 나의 프로젝트에서 X와 y에 해당하는 것이 무엇인지 설명해보세요.
+2. 특성 컬럼(X)을 선택할 때 어떤 기준으로 포함할 컬럼과 제외할 컬럼을 구분했나요?</div>
+
+            <div class="chat-box" id="chat_5_1"></div>
+            <textarea id="answer_5_1" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_5_1" class="btn btn-success"
+                        onclick="submitCheckpoint(5, 1, 'submit_5_1', 'chat_5_1', 'next_5_1')">제출하기</button>
+                <button type="button" id="complete_5_1" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(5, 1, 'next_5_1')">&#10003; 이해했습니다</button>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage4') }}" class="btn btn-secondary">← 4단계</a>
+            {% if already_completed %}
+            <button type="submit" class="btn btn-success">저장하고 완료 →</button>
+            {% else %}
+            <button type="submit" id="next_5_1" class="btn btn-primary" disabled style="display:none">다음: 데이터 분리 →</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+<!-- AI 코드 도우미 사이드바 -->
+<button id="ai-sidebar-toggle" onclick="toggleSidebar()" title="AI 코드 도우미">💬<br>AI<br>도우미</button>
+<div id="ai-code-sidebar">
+    <div class="sidebar-header">
+        <span>💬 AI 코드 도우미</span>
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div class="sidebar-desc">코드 실행 중 오류가 나면 여기서 바로 질문하세요.</div>
+    <div id="sidebar-chat-box"></div>
+    <textarea id="sidebar-input" placeholder="오류 메시지나 질문을 입력하세요..." rows="3"></textarea>
+    <button id="sidebar-send-btn" onclick="submitSidebarChat()">질문하기</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+SIDEBAR_STAGE = 5;
+SIDEBAR_STEP = 1;
+var IS_KMEANS = {{ 'true' if idea and idea.algorithm == 'kmeans' else 'false' }};
+
+function updateCode() {
+    var df = document.getElementById('df_varname').value.trim() || 'df';
+    var featsRaw = document.getElementById('feature_cols').value.trim();
+    var cols = featsRaw
+        ? featsRaw.split(',').map(function(c){ return c.trim(); }).filter(Boolean)
+        : ['컬럼1', '컬럼2', '컬럼3'];
+    var colStr = cols.map(function(c){ return "'" + c + "'"; }).join(', ');
+    var code;
+    if (IS_KMEANS) {
+        code = "# 특성(X) 설정 — K-평균은 타겟(y)이 없습니다\n"
+             + "X = " + df + "[[" + colStr + "]]\n\n"
+             + "print('X 형태:', X.shape)";
+    } else {
+        var target = document.getElementById('target_col').value.trim() || '타겟컬럼명';
+        code = "# 특성(X)과 타겟(y) 설정\n"
+             + "X = " + df + "[[" + colStr + "]]\n"
+             + "y = " + df + "['" + target + "']\n\n"
+             + "print('X 형태:', X.shape)\n"
+             + "print('y 형태:', y.shape)";
+    }
+    document.getElementById('code-xy').textContent = code;
+}
+
+function copyCode(id) {
+    navigator.clipboard.writeText(document.getElementById(id).textContent).then(function() {
+        alert('코드가 복사되었습니다!');
+    });
+}
+
+updateCode();
+loadChatHistory(5, 1, 'chat_5_1');
+</script>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}5단계 — 훈련/테스트 데이터 분리{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">5단계 — 기계학습을 통한 모델 생성</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'X/y 설정'),(2,'데이터 분리'),(3,'모델 학습')] %}
+        <a href="{{ url_for('student.stage5_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none;
+            {% if i == 2 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 2 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 수정하고 저장할 수 있습니다.</div>
+    {% endif %}
+
+    <form method="POST" id="stage5_step2_form">
+        <div class="section">
+            <h3 class="section-title">훈련/테스트 데이터 분리</h3>
+
+            <div class="info-box" style="margin-bottom:20px;">
+                <strong>왜 데이터를 나누나요?</strong><br>
+                모델이 학습에 사용한 데이터로만 평가하면, 실제 새 데이터에서의 성능을 알 수 없습니다.<br>
+                테스트 데이터는 모델이 한 번도 본 적 없는 데이터로, 학습 후 평가에만 사용합니다.
+            </div>
+
+            <!-- test_size 선택 카드 -->
+            <label class="form-label">테스트 데이터 비율 (test_size)</label>
+            <div style="display:flex; gap:12px; margin-top:10px; margin-bottom:24px;">
+                {% for val, pct, desc in [('0.1','10%','훈련 90% : 테스트 10%'),('0.2','20%','훈련 80% : 테스트 20%'),('0.3','30%','훈련 70% : 테스트 30%')] %}
+                <label style="flex:1; cursor:pointer;">
+                    <input type="radio" name="test_size" value="{{ val }}" id="ts_{{ val }}"
+                           onchange="updateSplitCode()" style="display:none;"
+                           {% if (idea and idea.test_size == val) or (not (idea and idea.test_size)) and val == '0.2' %}checked{% endif %}>
+                    <div id="ts_box_{{ val }}" style="border:2px solid #e2e8f0; border-radius:12px; padding:14px; text-align:center; transition:all 0.2s; user-select:none;">
+                        <div style="font-size:22px; font-weight:800; color:#4F46E5;">{{ pct }}</div>
+                        <div style="font-size:11px; color:#64748b; margin-top:6px; line-height:1.6;">{{ desc }}</div>
+                        {% if val == '0.2' %}<div style="font-size:10px; color:#059669; font-weight:700; margin-top:4px; background:#f0fdf4; border-radius:6px; padding:2px 6px; display:inline-block;">권장</div>{% endif %}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <!-- 코드 블록 -->
+            <div style="background:#1e293b; border-radius:12px; overflow:hidden; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:#0f172a;">
+                    <span style="font-size:12px; color:#94a3b8; font-family:monospace;">Python 코드 (Jupyter에 붙여넣기)</span>
+                    <button type="button" onclick="copyCode('code-split')"
+                            style="font-size:11px; color:#94a3b8; background:none; border:1px solid #334155; border-radius:6px; padding:3px 10px; cursor:pointer;">복사</button>
+                </div>
+                <pre style="margin:0; padding:16px; font-family:'Consolas','Courier New',monospace; font-size:13px; color:#e2e8f0; white-space:pre; overflow-x:auto; line-height:1.7;"><code id="code-split"></code></pre>
+            </div>
+            <div style="font-size:12px; color:#6366F1; margin-bottom:20px;">
+                ↑ 위에서 비율을 선택하면 코드가 자동으로 업데이트됩니다.
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-top:4px;">
+                <button type="submit" name="save_action" value="save_only"
+                        class="btn btn-secondary" style="padding:10px 24px; font-size:14px;">
+                    💾 저장하기
+                </button>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div style="font-size:13px; color:#059669; font-weight:600; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 14px;">✓ {{ message }}</div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 데이터 분리 이해 확인</div>
+            <div class="checkpoint-question">훈련/테스트 분리에 대해 다음 두 가지 질문에 답해보세요.
+
+1. 데이터를 훈련 세트와 테스트 세트로 나누는 이유는 무엇인가요?
+2. test_size=0.2의 의미를 설명하고, 테스트 비율이 너무 작거나 너무 크면 어떤 문제가 생길 수 있는지 생각해보세요.</div>
+
+            <div class="chat-box" id="chat_5_2"></div>
+            <textarea id="answer_5_2" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_5_2" class="btn btn-success"
+                        onclick="submitCheckpoint(5, 2, 'submit_5_2', 'chat_5_2', 'next_5_2')">제출하기</button>
+                <button type="button" id="complete_5_2" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(5, 2, 'next_5_2')">&#10003; 이해했습니다</button>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage5_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+            {% if already_completed %}
+            <button type="submit" class="btn btn-success">저장하고 완료 →</button>
+            {% else %}
+            <button type="submit" id="next_5_2" class="btn btn-primary" disabled style="display:none">다음: 모델 학습 →</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+<!-- AI 코드 도우미 사이드바 -->
+<button id="ai-sidebar-toggle" onclick="toggleSidebar()" title="AI 코드 도우미">💬<br>AI<br>도우미</button>
+<div id="ai-code-sidebar">
+    <div class="sidebar-header">
+        <span>💬 AI 코드 도우미</span>
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div class="sidebar-desc">코드 실행 중 오류가 나면 여기서 바로 질문하세요.</div>
+    <div id="sidebar-chat-box"></div>
+    <textarea id="sidebar-input" placeholder="오류 메시지나 질문을 입력하세요..." rows="3"></textarea>
+    <button id="sidebar-send-btn" onclick="submitSidebarChat()">질문하기</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+SIDEBAR_STAGE = 5;
+SIDEBAR_STEP = 2;
+var IS_KMEANS = {{ 'true' if idea and idea.algorithm == 'kmeans' else 'false' }};
+
+function getSelectedTestSize() {
+    var radios = document.querySelectorAll('input[name="test_size"]');
+    for (var i = 0; i < radios.length; i++) { if (radios[i].checked) return radios[i].value; }
+    return '0.2';
+}
+
+function updateSplitCode() {
+    var ts = getSelectedTestSize();
+    ['0.1', '0.2', '0.3'].forEach(function(v) {
+        var box = document.getElementById('ts_box_' + v);
+        if (v === ts) {
+            box.style.borderColor = '#4F46E5';
+            box.style.background = '#eef2ff';
+        } else {
+            box.style.borderColor = '#e2e8f0';
+            box.style.background = '';
+        }
+    });
+
+    var code;
+    if (IS_KMEANS) {
+        code = "from sklearn.model_selection import train_test_split\n\n"
+             + "X_train, X_test = train_test_split(\n"
+             + "    X, test_size=" + ts + ", random_state=42\n"
+             + ")\n"
+             + "print(f'훈련 데이터: {X_train.shape}')\n"
+             + "print(f'테스트 데이터: {X_test.shape}')";
+    } else {
+        code = "from sklearn.model_selection import train_test_split\n\n"
+             + "X_train, X_test, y_train, y_test = train_test_split(\n"
+             + "    X, y, test_size=" + ts + ", random_state=42\n"
+             + ")\n"
+             + "print(f'훈련 데이터: {X_train.shape}')\n"
+             + "print(f'테스트 데이터: {X_test.shape}')";
+    }
+    document.getElementById('code-split').textContent = code;
+}
+
+function copyCode(id) {
+    navigator.clipboard.writeText(document.getElementById(id).textContent).then(function() {
+        alert('코드가 복사되었습니다!');
+    });
+}
+
+updateSplitCode();
+loadChatHistory(5, 2, 'chat_5_2');
+</script>
+{% endblock %}

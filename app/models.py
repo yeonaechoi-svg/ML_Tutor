@@ -125,6 +125,12 @@ class ProjectIdea(db.Model):
     # 4단계: 알고리즘 선정
     algorithm = db.Column(db.String(50))    # linear_regression / decision_tree / random_forest / knn / kmeans
     algorithm_reason = db.Column(db.Text)   # 선정 이유
+    # 5단계: 모델 생성
+    df_varname = db.Column(db.String(100))       # 데이터프레임 변수명
+    target_column = db.Column(db.String(200))    # 타겟 컬럼
+    feature_columns = db.Column(db.Text)         # 특성 컬럼 목록 (쉼표 구분)
+    test_size = db.Column(db.String(10))         # 테스트 비율
+    model_params = db.Column(db.String(200))     # 하이퍼파라미터 값
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('project_idea', uselist=False))
