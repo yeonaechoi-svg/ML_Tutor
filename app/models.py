@@ -131,6 +131,9 @@ class ProjectIdea(db.Model):
     feature_columns = db.Column(db.Text)         # 특성 컬럼 목록 (쉼표 구분)
     test_size = db.Column(db.String(10))         # 테스트 비율
     model_params = db.Column(db.String(200))     # 하이퍼파라미터 값
+    # 6단계: 성능 평가 및 예측
+    model_score = db.Column(db.String(100))      # 모델 성능 점수
+    result_interpretation = db.Column(db.Text)   # 결과 해석 텍스트
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('project_idea', uselist=False))

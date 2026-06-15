@@ -42,6 +42,7 @@ def dashboard():
     completed_s3 = get_completed_substeps(3)
     completed_s4 = get_completed_substeps(4)
     completed_s5 = get_completed_substeps(5)
+    completed_s6 = get_completed_substeps(6)
     quiz_result = QuizResult.query.filter_by(
         user_id=current_user.id, stage=1
     ).order_by(QuizResult.created_at.desc()).first()
@@ -52,7 +53,10 @@ def dashboard():
     s3_done = len(completed_s3) >= 3
     s4_done = len(completed_s4) >= 2
     s5_done = len(completed_s5) >= 3
-    if s5_done:
+    s6_done = len(completed_s6) >= 3
+    if s6_done:
+        current_stage = 7
+    elif s5_done:
         current_stage = 6
     elif s4_done:
         current_stage = 5
@@ -73,6 +77,7 @@ def dashboard():
         completed_s3=completed_s3,
         completed_s4=completed_s4,
         completed_s5=completed_s5,
+        completed_s6=completed_s6,
         current_stage=current_stage,
         quiz_result=quiz_result,
         idea=idea
@@ -373,6 +378,68 @@ def stage4_step(step):
     template_map = {
         1: 'student/stage4/step1.html',
         2: 'student/stage4/step2.html',
+    }
+
+    return render_template(
+        template_map[step],
+        step=step,
+        completed=completed,
+        already_completed=(step in completed),
+        idea=idea
+    )
+
+
+# ── 6단계: 성능 평가 및 예측 ──
+
+@student_bp.route('/stage6')
+@login_required
+def stage6():
+    completed = get_completed_substeps(6)
+    if not completed:
+        return redirect(url_for('student.stage6_step', step=1))
+    next_step = min(max(completed) + 1, 3)
+    return redirect(url_for('student.stage6_step', step=next_step))
+
+
+@student_bp.route('/stage6/step/<int:step>', methods=['GET', 'POST'])
+@login_required
+def stage6_step(step):
+    if step not in range(1, 4):
+        return redirect(url_for('student.stage6_step', step=1))
+
+    completed = get_completed_substeps(6)
+    idea = ProjectIdea.query.filter_by(user_id=current_user.id).first()
+
+    if request.method == 'POST':
+        try:
+            if not idea:
+                idea = ProjectIdea(user_id=current_user.id)
+                db.session.add(idea)
+
+            if step == 3:
+                idea.model_score = request.form.get('model_score', '').strip()
+                idea.result_interpretation = request.form.get('result_interpretation', '').strip()
+
+            save_progress(6, step)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        if request.form.get('save_action') == 'save_only':
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': True})
+            flash('저장되었습니다.', 'success')
+            return redirect(url_for('student.stage6_step', step=step))
+
+        if step < 3:
+            return redirect(url_for('student.stage6_step', step=step + 1))
+        flash('6단계를 완료했습니다! 수고했어요.', 'success')
+        return redirect(url_for('student.dashboard'))
+
+    template_map = {
+        1: 'student/stage6/step1.html',
+        2: 'student/stage6/step2.html',
+        3: 'student/stage6/step3.html',
     }
 
     return render_template(

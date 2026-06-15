@@ -16,7 +16,7 @@
 <!-- 통계 카드 -->
 <div class="grid-3" style="margin-bottom:28px;">
     <div class="stat-card">
-        <div class="stat-number">{{ completed_s1|length + completed_s2|length + completed_s3|length + completed_s4|length + completed_s5|length }}</div>
+        <div class="stat-number">{{ completed_s1|length + completed_s2|length + completed_s3|length + completed_s4|length + completed_s5|length + completed_s6|length }}</div>
         <div class="stat-label">완료한 학습 단계</div>
     </div>
     <div class="stat-card">
@@ -286,9 +286,49 @@
             {% endif %}
         </div>
 
-        <!-- ── 6~7단계 (준비 예정) ── -->
+        <!-- ── 6단계 ── -->
+        {% set s6_done_count = completed_s6|length %}
+        {% set s6_complete = s6_done_count >= 3 %}
+        {% set s6_locked = current_stage < 6 %}
+        <div style="border:1.5px solid {% if s6_complete %}#6ee7b7{% elif current_stage == 6 %}#a5b4fc{% else %}#e2e8f0{% endif %}; border-radius:12px; overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px;
+                        background:{% if s6_complete %}#f0fdf4{% elif current_stage == 6 %}#eef2ff{% else %}#f8fafc{% endif %};">
+                <div style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; flex-shrink:0;
+                            background:{% if s6_complete %}linear-gradient(135deg,#059669,#10b981){% elif current_stage == 6 %}linear-gradient(135deg,#4F46E5,#7C3AED){% else %}#e2e8f0{% endif %};
+                            color:{% if s6_complete or current_stage == 6 %}#fff{% else %}#94a3b8{% endif %};">
+                    {% if s6_complete %}✓{% else %}6{% endif %}
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:14px; font-weight:700; color:{% if s6_locked %}#94a3b8{% else %}#1e293b{% endif %};">6단계 — 성능 평가 및 예측</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                        {% if s6_locked %}5단계 완료 후 진행 가능{% else %}{{ s6_done_count }}/3 완료{% if idea and idea.model_score %} · 점수: {{ idea.model_score }}{% endif %}{% endif %}
+                    </div>
+                </div>
+                {% if s6_complete %}<span class="badge badge-green">완료</span>
+                {% elif current_stage == 6 %}<span class="badge badge-blue">진행 중</span>
+                {% elif s6_locked %}<span class="badge badge-gray">🔒 잠금</span>
+                {% else %}<span class="badge badge-gray">대기</span>{% endif %}
+                {% if not s6_locked %}
+                <a href="{{ url_for('student.stage6') }}" style="font-size:12px; color:#4F46E5; text-decoration:none; font-weight:600; flex-shrink:0;">바로가기 →</a>
+                {% endif %}
+            </div>
+            {% if not s6_locked %}
+            <div style="padding:10px 16px 14px; display:flex; flex-direction:column; gap:6px; border-top:1px solid #f1f5f9;">
+                {% for num, title, icon in [(1,'성능 평가','📊'),(2,'테스트 예측','🎯'),(3,'결과 해석','📝')] %}
+                {% set done = num in completed_s6 %}
+                <div style="display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:8px; background:{% if done %}#f0fdf4{% else %}#f8fafc{% endif %};">
+                    <span style="font-size:13px; color:{% if done %}#059669{% else %}#94a3b8{% endif %}; font-weight:700; width:16px; text-align:center;">{% if done %}✓{% else %}{{ num }}{% endif %}</span>
+                    <span style="font-size:13px;">{{ icon }}</span>
+                    <a href="{{ url_for('student.stage6_step', step=num) }}" style="font-size:13px; text-decoration:none; color:{% if done %}#065f46{% else %}#374151{% endif %}; font-weight:{% if done %}600{% else %}400{% endif %};">{{ title }}</a>
+                    {% if done %}<span class="badge badge-green" style="font-size:10px; padding:2px 8px; margin-left:auto;">완료</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ── 7단계 (준비 예정) ── -->
         {% for num, title, icon, desc in [
-            (6, '성능 평가 및 예측',    '📊', '정확도 확인 및 테스트 데이터 예측'),
             (7, '자기평가 및 동료 평가','⭐', '체크리스트 기반 자기·동료 평가')
         ] %}
         <div style="border:1.5px solid #e2e8f0; border-radius:12px; overflow:hidden; opacity:0.65;">
@@ -326,6 +366,10 @@
         {% elif current_stage == 5 %}
             <a href="{{ url_for('student.stage5') }}" class="btn btn-primary" style="padding:12px 32px;">
                 5단계 학습 계속하기 →
+            </a>
+        {% elif current_stage == 6 %}
+            <a href="{{ url_for('student.stage6') }}" class="btn btn-primary" style="padding:12px 32px;">
+                6단계 학습 계속하기 →
             </a>
         {% else %}
             <p style="color:#10b981; font-weight:600;">🎉 구현된 단계를 모두 완료했습니다! 수고했어요.</p>

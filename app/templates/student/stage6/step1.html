@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}6단계 — 모델 성능 평가{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">6단계 — 성능 평가 및 예측</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'성능 평가'),(2,'예측'),(3,'결과 해석')] %}
+        <a href="{{ url_for('student.stage6_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none;
+            {% if i == 1 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 1 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다.</div>
+    {% endif %}
+
+    <!-- 알고리즘 정보 -->
+    {% if idea and idea.algorithm %}
+    <div class="info-box" style="margin-bottom:20px;">
+        {% if idea.topic %}<strong>주제:</strong> {{ idea.topic }}&nbsp;&nbsp;{% endif %}
+        <strong>알고리즘:</strong>
+        {% if idea.algorithm == 'linear_regression' %}📈 선형 회귀
+        {% elif idea.algorithm == 'decision_tree' %}🌳 의사결정 트리
+        {% elif idea.algorithm == 'random_forest' %}🌲 랜덤 포레스트
+        {% elif idea.algorithm == 'knn' %}👥 KNN
+        {% elif idea.algorithm == 'kmeans' %}🔵 K-평균{% endif %}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="section">
+            <h3 class="section-title">테스트 데이터로 성능 평가</h3>
+
+            <div class="info-box" style="margin-bottom:20px;">
+                <strong>성능 평가란?</strong><br>
+                모델이 한 번도 본 적 없는 테스트 데이터로 얼마나 잘 예측하는지 확인합니다.<br>
+                훈련 정확도가 높아도 테스트 정확도가 낮으면 <strong>과적합(Overfitting)</strong>을 의심해야 합니다.
+            </div>
+
+            <!-- 알고리즘별 성능 평가 코드 -->
+            {% set algo = idea.algorithm if idea and idea.algorithm else 'linear_regression' %}
+            <div style="background:#1e293b; border-radius:12px; overflow:hidden; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:#0f172a;">
+                    <span style="font-size:12px; color:#94a3b8; font-family:monospace;">Python 코드 (Jupyter에 붙여넣기)</span>
+                    <button type="button" onclick="copyCode('code-eval')"
+                            style="font-size:11px; color:#94a3b8; background:none; border:1px solid #334155; border-radius:6px; padding:3px 10px; cursor:pointer;">복사</button>
+                </div>
+                <pre style="margin:0; padding:16px; font-family:'Consolas','Courier New',monospace; font-size:13px; color:#e2e8f0; white-space:pre; overflow-x:auto; line-height:1.7;"><code id="code-eval">{% if algo == 'linear_regression' %}# 테스트 데이터로 성능 평가 (회귀)
+from sklearn.metrics import mean_squared_error
+import numpy as np
+
+r2 = model.score(X_test, y_test)
+print("R² 점수 (테스트):", round(r2, 4))
+
+y_pred = model.predict(X_test)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+print("RMSE:", round(rmse, 4))
+
+# R²: 1에 가까울수록 좋음 (0.7 이상이면 양호)
+# RMSE: 0에 가까울수록 좋음 (예측 오차의 평균){% elif algo == 'kmeans' %}# 군집 성능 평가 (실루엣 점수)
+from sklearn.metrics import silhouette_score
+
+score = silhouette_score(X_train, model.labels_)
+print("실루엣 점수:", round(score, 4))
+print()
+print("해석 기준:")
+print("  0.7 이상 → 군집이 매우 잘 구분됨")
+print("  0.5~0.7  → 군집 구분 양호")
+print("  0.25~0.5 → 군집 구분 약함")
+print("  0.25 미만 → 군집 구분 불명확"){% else %}# 테스트 데이터로 성능 평가 (분류)
+from sklearn.metrics import accuracy_score, classification_report
+
+y_pred = model.predict(X_test)
+acc = accuracy_score(y_test, y_pred)
+print("테스트 정확도:", round(acc, 4))
+
+print("\n분류 리포트:")
+print(classification_report(y_test, y_pred))
+
+# precision: 예측이 맞을 확률
+# recall: 실제값을 맞춘 비율
+# f1-score: precision과 recall의 조화 평균{% endif %}</code></pre>
+            </div>
+            <div style="font-size:12px; color:#6366F1; margin-bottom:24px;">
+                ↑ 위 코드를 Jupyter에서 실행하여 성능 결과를 확인하세요.
+            </div>
+
+            <!-- 성능 지표 해석 가이드 -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px 20px; margin-bottom:20px;">
+                <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px;">📊 성능 지표 해석 기준</div>
+                {% if algo == 'linear_regression' %}
+                <div style="font-size:13px; color:#475569; line-height:2;">
+                    <div>R² ≥ 0.9 → <span style="color:#059669; font-weight:600;">매우 좋음</span> — 데이터 변동의 90% 이상을 설명</div>
+                    <div>R² 0.7~0.9 → <span style="color:#0284c7; font-weight:600;">양호</span> — 일반적으로 사용 가능한 수준</div>
+                    <div>R² 0.5~0.7 → <span style="color:#f59e0b; font-weight:600;">보통</span> — 개선 여지 있음</div>
+                    <div>R² &lt; 0.5 → <span style="color:#ef4444; font-weight:600;">낮음</span> — 특성 선택 또는 데이터 검토 필요</div>
+                </div>
+                {% elif algo == 'kmeans' %}
+                <div style="font-size:13px; color:#475569; line-height:2;">
+                    <div>실루엣 점수 ≥ 0.7 → <span style="color:#059669; font-weight:600;">군집 매우 명확</span></div>
+                    <div>실루엣 점수 0.5~0.7 → <span style="color:#0284c7; font-weight:600;">군집 양호</span></div>
+                    <div>실루엣 점수 0.25~0.5 → <span style="color:#f59e0b; font-weight:600;">군집 약함</span> — k값 조정 고려</div>
+                    <div>실루엣 점수 &lt; 0.25 → <span style="color:#ef4444; font-weight:600;">군집 불명확</span> — 특성 재검토 필요</div>
+                </div>
+                {% else %}
+                <div style="font-size:13px; color:#475569; line-height:2;">
+                    <div>정확도 ≥ 90% → <span style="color:#059669; font-weight:600;">매우 좋음</span></div>
+                    <div>정확도 75~90% → <span style="color:#0284c7; font-weight:600;">양호</span> — 실용적 수준</div>
+                    <div>정확도 60~75% → <span style="color:#f59e0b; font-weight:600;">보통</span> — 개선 여지 있음</div>
+                    <div>정확도 &lt; 60% → <span style="color:#ef4444; font-weight:600;">낮음</span> — 데이터 또는 파라미터 검토 필요</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 성능 지표 이해 확인</div>
+            <div class="checkpoint-question">모델 성능 평가에 대해 다음 두 가지 질문에 답해보세요.
+
+1. 정확도(accuracy) 또는 R² 점수가 각각 무엇을 의미하는지 자신의 말로 설명해보세요.
+2. 내 모델의 성능 결과를 보고, 이 수치가 좋은 편인지 나쁜 편인지 판단한 기준은 무엇인가요?</div>
+
+            <div class="chat-box" id="chat_6_1"></div>
+            <textarea id="answer_6_1" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_6_1" class="btn btn-success"
+                        onclick="submitCheckpoint(6, 1, 'submit_6_1', 'chat_6_1', 'next_6_1')">제출하기</button>
+                <button type="button" id="complete_6_1" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(6, 1, 'next_6_1')">&#10003; 이해했습니다</button>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage5') }}" class="btn btn-secondary">← 5단계</a>
+            {% if already_completed %}
+            <button type="submit" class="btn btn-success">다음 →</button>
+            {% else %}
+            <button type="submit" id="next_6_1" class="btn btn-primary" disabled style="display:none">다음: 예측 →</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+<!-- AI 코드 도우미 사이드바 -->
+<button id="ai-sidebar-toggle" onclick="toggleSidebar()" title="AI 코드 도우미">💬<br>AI<br>도우미</button>
+<div id="ai-code-sidebar">
+    <div class="sidebar-header">
+        <span>💬 AI 코드 도우미</span>
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div class="sidebar-desc">코드 실행 중 오류가 나면 여기서 바로 질문하세요.</div>
+    <div id="sidebar-chat-box"></div>
+    <textarea id="sidebar-input" placeholder="오류 메시지나 질문을 입력하세요..." rows="3"></textarea>
+    <button id="sidebar-send-btn" onclick="submitSidebarChat()">질문하기</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+SIDEBAR_STAGE = 6;
+SIDEBAR_STEP = 1;
+
+function copyCode(id) {
+    navigator.clipboard.writeText(document.getElementById(id).textContent).then(function() {
+        alert('코드가 복사되었습니다!');
+    });
+}
+loadChatHistory(6, 1, 'chat_6_1');
+</script>
+{% endblock %}

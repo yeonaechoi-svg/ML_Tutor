@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}6단계 — 결과 해석{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">6단계 — 성능 평가 및 예측</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'성능 평가'),(2,'예측'),(3,'결과 해석')] %}
+        <a href="{{ url_for('student.stage6_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none;
+            {% if i == 3 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 3 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 수정하고 저장할 수 있습니다.</div>
+    {% endif %}
+
+    <form method="POST" id="stage6_step3_form">
+        <!-- 성능 점수 입력 -->
+        <div class="section">
+            <h3 class="section-title">모델 성능 점수 기록</h3>
+            <div class="form-group" style="max-width:400px; margin-bottom:8px;">
+                <label class="form-label">
+                    {% if idea and idea.algorithm == 'linear_regression' %}R² 점수
+                    {% elif idea and idea.algorithm == 'kmeans' %}실루엣 점수
+                    {% else %}테스트 정확도 (%){% endif %}
+                    — Jupyter 실행 결과를 입력하세요
+                </label>
+                <input type="text" class="form-control" id="model_score_input" name="model_score"
+                       value="{{ idea.model_score if idea and idea.model_score else '' }}"
+                       placeholder="{% if idea and idea.algorithm == 'linear_regression' %}예: 0.87{% elif idea and idea.algorithm == 'kmeans' %}예: 0.62{% else %}예: 83.5{% endif %}"
+                       style="max-width:200px;">
+            </div>
+
+            <!-- 낮은 정확도 AI 피드백 -->
+            <div style="background:#fefce8; border:1.5px solid #fde68a; border-radius:12px; padding:16px 20px; margin-top:16px; margin-bottom:24px;">
+                <div style="font-size:13px; font-weight:700; color:#92400e; margin-bottom:8px;">💡 성능이 기대보다 낮다면?</div>
+                <p style="font-size:13px; color:#78350f; margin-bottom:12px; line-height:1.7;">
+                    점수를 입력하고 버튼을 누르면 AI가 개선 방향을 힌트로 제시합니다.
+                </p>
+                <button type="button" onclick="askImprovement()"
+                        class="btn btn-secondary" style="font-size:13px; padding:8px 18px;">
+                    AI에게 개선 방향 물어보기
+                </button>
+                <div id="improvement-chat" style="margin-top:14px;"></div>
+            </div>
+        </div>
+
+        <!-- 결과 해석 작성 -->
+        <div class="section">
+            <h3 class="section-title">프로젝트 결과 해석</h3>
+            <div class="info-box" style="margin-bottom:14px;">
+                <strong>작성 가이드</strong><br>
+                • 내 모델이 해결하려 했던 문제와 성능 결과를 연결해서 설명해보세요.<br>
+                • 이 모델이 실제로 사용된다면 어떤 상황에서 유용할까요?<br>
+                • 한계점이나 개선하고 싶은 점이 있다면 적어보세요.
+            </div>
+            <div class="form-group">
+                <label class="form-label">결과 해석</label>
+                <textarea class="form-control" name="result_interpretation" rows="6"
+                          placeholder="예) 내 모델의 테스트 정확도는 83.5%로, 대부분의 경우 올바르게 예측했습니다. 특히... 하지만 ... 경우에는 오류가 발생했으며, 이는 데이터의 특성 때문으로 보입니다.">{{ idea.result_interpretation if idea and idea.result_interpretation else '' }}</textarea>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+                <button type="submit" name="save_action" value="save_only"
+                        class="btn btn-secondary" style="padding:10px 24px; font-size:14px;">
+                    💾 저장하기
+                </button>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div style="font-size:13px; color:#059669; font-weight:600; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 14px;">✓ {{ message }}</div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 전체 결과 종합 해석</div>
+            <div class="checkpoint-question">프로젝트 전체 결과를 정리해보세요.
+
+1. 내 모델이 해결하려 했던 문제와 실제 성능 결과를 연결하여 설명해보세요. 목표를 달성했나요?
+2. 이 모델을 실제로 사용한다면 어떤 상황에서 유용하고, 어떤 한계가 있을지 생각해보세요.</div>
+
+            <div class="chat-box" id="chat_6_3"></div>
+            <textarea id="answer_6_3" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_6_3" class="btn btn-success"
+                        onclick="submitCheckpoint(6, 3, 'submit_6_3', 'chat_6_3', 'next_6_3')">제출하기</button>
+                <button type="button" id="complete_6_3" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(6, 3, 'next_6_3')">&#10003; 이해했습니다</button>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage6_step', step=2) }}" class="btn btn-secondary">← 이전</a>
+            {% if already_completed %}
+            <button type="submit" class="btn btn-success">저장하고 완료 →</button>
+            {% else %}
+            <button type="submit" id="next_6_3" class="btn btn-primary" disabled style="display:none">6단계 완료 →</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+<!-- AI 코드 도우미 사이드바 -->
+<button id="ai-sidebar-toggle" onclick="toggleSidebar()" title="AI 코드 도우미">💬<br>AI<br>도우미</button>
+<div id="ai-code-sidebar">
+    <div class="sidebar-header">
+        <span>💬 AI 코드 도우미</span>
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div class="sidebar-desc">코드 실행 중 오류가 나면 여기서 바로 질문하세요.</div>
+    <div id="sidebar-chat-box"></div>
+    <textarea id="sidebar-input" placeholder="오류 메시지나 질문을 입력하세요..." rows="3"></textarea>
+    <button id="sidebar-send-btn" onclick="submitSidebarChat()">질문하기</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+SIDEBAR_STAGE = 6;
+SIDEBAR_STEP = 3;
+
+var algoName = '{{ idea.algorithm if idea and idea.algorithm else "모델" }}';
+var algoLabel = {
+    'linear_regression': '선형 회귀',
+    'decision_tree': '의사결정 트리',
+    'random_forest': '랜덤 포레스트',
+    'knn': 'KNN',
+    'kmeans': 'K-평균'
+}[algoName] || algoName;
+
+function askImprovement() {
+    var score = document.getElementById('model_score_input').value.trim();
+    if (!score) {
+        alert('먼저 성능 점수를 입력해주세요.');
+        return;
+    }
+
+    var question = algoLabel + ' 모델의 성능 점수가 ' + score + '입니다. '
+                 + '이 성능이 낮은 경우 개선할 수 있는 방향에 대해 힌트를 주세요.';
+
+    var box = document.getElementById('improvement-chat');
+
+    var userDiv = document.createElement('div');
+    userDiv.className = 'chat-bubble user-bubble';
+    userDiv.textContent = question;
+    box.appendChild(userDiv);
+    box.scrollTop = box.scrollHeight;
+
+    var loadingDiv = document.createElement('div');
+    loadingDiv.className = 'chat-bubble ai-bubble';
+    loadingDiv.textContent = '생각 중...';
+    loadingDiv.id = 'improvement-loading';
+    box.appendChild(loadingDiv);
+
+    fetch('/ai-tutor/code-help', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({stage: 6, step: 0, question: question})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        document.getElementById('improvement-loading').remove();
+        var aiDiv = document.createElement('div');
+        aiDiv.className = 'chat-bubble ai-bubble';
+        aiDiv.textContent = data.answer;
+        box.appendChild(aiDiv);
+        box.scrollTop = box.scrollHeight;
+    });
+}
+
+loadChatHistory(6, 3, 'chat_6_3');
+</script>
+{% endblock %}

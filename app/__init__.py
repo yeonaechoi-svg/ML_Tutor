@@ -42,7 +42,7 @@ def create_app():
             return dict(nav_current_stage=None, nav_completed_stages=set())
         from app.models import Progress
         # 단계 완료 기준: 해당 단계의 마지막 서브스텝 완료 여부
-        stage_last_substep = {1: 7, 2: 3, 3: 3, 4: 2, 5: 3}
+        stage_last_substep = {1: 7, 2: 3, 3: 3, 4: 2, 5: 3, 6: 3}
         completed_stages = set()
         for stage, last_sub in stage_last_substep.items():
             p = Progress.query.filter_by(
@@ -61,11 +61,13 @@ def create_app():
         inspector = inspect(db.engine)
         existing_cols = [c['name'] for c in inspector.get_columns('project_ideas')]
         new_cols = [
-            ('df_varname',      'VARCHAR(100)'),
-            ('target_column',   'VARCHAR(200)'),
-            ('feature_columns', 'TEXT'),
-            ('test_size',       'VARCHAR(10)'),
-            ('model_params',    'VARCHAR(200)'),
+            ('df_varname',           'VARCHAR(100)'),
+            ('target_column',        'VARCHAR(200)'),
+            ('feature_columns',      'TEXT'),
+            ('test_size',            'VARCHAR(10)'),
+            ('model_params',         'VARCHAR(200)'),
+            ('model_score',          'VARCHAR(100)'),
+            ('result_interpretation','TEXT'),
         ]
         with db.engine.connect() as conn:
             for col_name, col_type in new_cols:

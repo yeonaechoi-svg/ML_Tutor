@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}6단계 — 테스트 데이터 예측{% endblock %}
+
+{% block content %}
+{% set algo = idea.algorithm if idea and idea.algorithm else 'linear_regression' %}
+<div class="card">
+    <h2 class="card-title">6단계 — 성능 평가 및 예측</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'성능 평가'),(2,'예측'),(3,'결과 해석')] %}
+        <a href="{{ url_for('student.stage6_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none;
+            {% if i == 2 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 2 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다.</div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="section">
+            <h3 class="section-title">테스트 데이터 예측</h3>
+
+            <div class="info-box" style="margin-bottom:20px;">
+                <strong>predict()란?</strong><br>
+                학습이 끝난 모델에 새로운 데이터를 입력하면 예측값을 돌려줍니다.<br>
+                fit()은 학습, predict()는 예측 — 두 역할을 구분하는 것이 중요합니다.
+            </div>
+
+            <!-- 예측 코드 -->
+            <div style="background:#1e293b; border-radius:12px; overflow:hidden; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:#0f172a;">
+                    <span style="font-size:12px; color:#94a3b8; font-family:monospace;">Python 코드 (Jupyter에 붙여넣기)</span>
+                    <button type="button" onclick="copyCode('code-predict')"
+                            style="font-size:11px; color:#94a3b8; background:none; border:1px solid #334155; border-radius:6px; padding:3px 10px; cursor:pointer;">복사</button>
+                </div>
+                <pre style="margin:0; padding:16px; font-family:'Consolas','Courier New',monospace; font-size:13px; color:#e2e8f0; white-space:pre; overflow-x:auto; line-height:1.7;"><code id="code-predict">{% if algo == 'kmeans' %}# 테스트 데이터 군집 예측
+cluster_pred = model.predict(X_test)
+
+# 예측 결과 확인
+import pandas as pd
+result_df = pd.DataFrame({
+    '군집 번호': cluster_pred[:10]
+}, index=range(10))
+print("테스트 데이터 예측 결과 (앞 10개):")
+print(result_df)
+print(f"\n전체 {len(cluster_pred)}개 데이터 예측 완료"){% elif algo == 'linear_regression' %}# 테스트 데이터 예측
+y_pred = model.predict(X_test)
+
+# 예측 결과 샘플 확인
+import pandas as pd
+result_df = pd.DataFrame({
+    '실제값': y_test.values[:10],
+    '예측값': y_pred[:10].round(2),
+    '오차': (y_test.values[:10] - y_pred[:10]).round(2)
+})
+print("테스트 데이터 예측 결과 (앞 10개):")
+print(result_df){% else %}# 테스트 데이터 예측
+y_pred = model.predict(X_test)
+
+# 예측 결과 샘플 확인
+import pandas as pd
+result_df = pd.DataFrame({
+    '실제값': y_test.values[:10],
+    '예측값': y_pred[:10],
+    '정답 여부': ['O' if a == b else 'X' for a, b in zip(y_test.values[:10], y_pred[:10])]
+})
+print("테스트 데이터 예측 결과 (앞 10개):")
+print(result_df){% endif %}</code></pre>
+            </div>
+            <div style="font-size:12px; color:#6366F1; margin-bottom:24px;">
+                ↑ 위 코드를 Jupyter에서 실행하여 예측 결과를 확인하세요.
+            </div>
+        </div>
+
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 예측 결과 이해 확인</div>
+            <div class="checkpoint-question">테스트 데이터 예측에 대해 다음 두 가지 질문에 답해보세요.
+
+1. model.predict(X_test)는 무엇을 반환하나요? 훈련 때 사용한 fit()과 어떻게 다른지 설명해보세요.
+2. 예측값과 실제값을 비교했을 때, 틀린 예측이 있다면 어떤 경우에 틀렸는지 패턴이 보이나요?</div>
+
+            <div class="chat-box" id="chat_6_2"></div>
+            <textarea id="answer_6_2" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_6_2" class="btn btn-success"
+                        onclick="submitCheckpoint(6, 2, 'submit_6_2', 'chat_6_2', 'next_6_2')">제출하기</button>
+                <button type="button" id="complete_6_2" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(6, 2, 'next_6_2')">&#10003; 이해했습니다</button>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage6_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+            {% if already_completed %}
+            <button type="submit" class="btn btn-success">다음 →</button>
+            {% else %}
+            <button type="submit" id="next_6_2" class="btn btn-primary" disabled style="display:none">다음: 결과 해석 →</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- AI 코드 도우미 사이드바 -->
+<button id="ai-sidebar-toggle" onclick="toggleSidebar()" title="AI 코드 도우미">💬<br>AI<br>도우미</button>
+<div id="ai-code-sidebar">
+    <div class="sidebar-header">
+        <span>💬 AI 코드 도우미</span>
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div class="sidebar-desc">코드 실행 중 오류가 나면 여기서 바로 질문하세요.</div>
+    <div id="sidebar-chat-box"></div>
+    <textarea id="sidebar-input" placeholder="오류 메시지나 질문을 입력하세요..." rows="3"></textarea>
+    <button id="sidebar-send-btn" onclick="submitSidebarChat()">질문하기</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+SIDEBAR_STAGE = 6;
+SIDEBAR_STEP = 2;
+
+function copyCode(id) {
+    navigator.clipboard.writeText(document.getElementById(id).textContent).then(function() {
+        alert('코드가 복사되었습니다!');
+    });
+}
+loadChatHistory(6, 2, 'chat_6_2');
+</script>
+{% endblock %}
