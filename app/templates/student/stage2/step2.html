@@ -8,12 +8,13 @@
     <!-- 진행 표시 -->
     <div style="display:flex; gap:6px; margin-bottom:24px;">
         {% for i, label in [(1,'주제 선정'),(2,'유형 판별'),(3,'문제 정의서')] %}
-        <div style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid;
-            {% if i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
-            {% elif i == 2 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5;
+        <a href="{{ url_for('student.stage2_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none; cursor:pointer;
+            {% if i == 2 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
             {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
             {% if i in completed %}✓ {% endif %}{{ label }}
-        </div>
+        </a>
         {% endfor %}
     </div>
 
@@ -62,97 +63,104 @@
         </div>
     </div>
 
-    <div class="section">
-        <h3 class="section-title">나의 프로젝트 유형 선택</h3>
-        {% if already_completed %}
-        <div class="info-box">
-            <strong>선택한 유형:</strong>
-            {% if idea.ml_type == 'regression' %}📈 회귀 (Regression)
-            {% elif idea.ml_type == 'classification' %}🏷️ 분류 (Classification)
-            {% elif idea.ml_type == 'clustering' %}🔵 군집 (Clustering)
-            {% endif %}<br>
-            <strong>선택 이유:</strong> {{ idea.ml_reason }}<br>
-            <span style="font-size:12px; color:#64748b; margin-top:4px; display:block;">이미 완료한 단계입니다.</span>
-        </div>
-        {% else %}
-        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;" id="ml-type-selector">
-            {% for val, icon, label, desc in [
-                ('regression',      '📈', '회귀 (Regression)',       '예측값이 연속적인 수치일 때'),
-                ('classification',  '🏷️', '분류 (Classification)',   '예측값이 정해진 카테고리일 때'),
-                ('clustering',      '🔵', '군집 (Clustering)',       '정답 없이 유사한 그룹을 찾을 때')
-            ] %}
-            <label style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:2px solid #e2e8f0; border-radius:10px; cursor:pointer; transition:all 0.15s;"
-                   id="label_{{ val }}"
-                   onmouseover="this.style.borderColor='#a5b4fc'"
-                   onmouseout="if(!document.getElementById('type_{{ val }}').checked) this.style.borderColor='#e2e8f0'">
-                <input type="radio" name="ml_type_ui" id="type_{{ val }}" value="{{ val }}"
-                       style="accent-color:#6366F1;"
-                       onchange="selectType('{{ val }}')">
-                <span style="font-size:18px;">{{ icon }}</span>
-                <div>
-                    <div style="font-size:14px; font-weight:700; color:#1e293b;">{{ label }}</div>
-                    <div style="font-size:12px; color:#64748b;">{{ desc }}</div>
+    <form method="POST" id="stage2_step2_form">
+
+        <div class="section">
+            <h3 class="section-title">나의 프로젝트 유형 선택</h3>
+
+            {% if already_completed %}
+            <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 유형을 변경하려면 다시 선택하고 저장하세요.</div>
+            {% endif %}
+
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;" id="ml-type-selector">
+                {% for val, icon, label, desc in [
+                    ('regression',      '📈', '회귀 (Regression)',       '예측값이 연속적인 수치일 때'),
+                    ('classification',  '🏷️', '분류 (Classification)',   '예측값이 정해진 카테고리일 때'),
+                    ('clustering',      '🔵', '군집 (Clustering)',       '정답 없이 유사한 그룹을 찾을 때')
+                ] %}
+                <label style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:2px solid #e2e8f0; border-radius:10px; cursor:pointer; transition:all 0.15s;"
+                       id="label_{{ val }}"
+                       onmouseover="this.style.borderColor='#a5b4fc'"
+                       onmouseout="if(!document.getElementById('type_{{ val }}').checked) this.style.borderColor='#e2e8f0'">
+                    <input type="radio" name="ml_type" id="type_{{ val }}" value="{{ val }}"
+                           style="accent-color:#6366F1;"
+                           {% if idea and idea.ml_type == val %}checked{% endif %}
+                           onchange="selectType('{{ val }}')">
+                    <span style="font-size:18px;">{{ icon }}</span>
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:#1e293b;">{{ label }}</div>
+                        <div style="font-size:12px; color:#64748b;">{{ desc }}</div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="ml_reason">선택 이유를 작성해보세요</label>
+                <textarea class="form-control" id="ml_reason" name="ml_reason" rows="3"
+                          placeholder="예: 자전거 대여량은 1, 2, 3...과 같은 수치이므로 회귀가 적합합니다.">{{ idea.ml_reason if idea and idea.ml_reason else '' }}</textarea>
+            </div>
+
+            <!-- 저장 버튼 -->
+            <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+                <button type="submit" name="save_action" value="save_only" class="btn btn-secondary"
+                        style="padding:10px 24px; font-size:14px;">
+                    💾 저장하기
+                </button>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div style="font-size:13px; color:#059669; font-weight:600; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 14px;">
+                    ✓ {{ message }}
                 </div>
-            </label>
-            {% endfor %}
+                {% endfor %}
+                {% endwith %}
+            </div>
         </div>
-        <div class="form-group">
-            <label class="form-label" for="ml_reason_input">선택 이유를 작성해보세요</label>
-            <textarea class="form-control" id="ml_reason_input" rows="3"
-                      placeholder="예: 자전거 대여량은 1, 2, 3...과 같은 수치이므로 회귀가 적합합니다."></textarea>
-        </div>
-        {% endif %}
-    </div>
 
-    <!-- AI 체크포인트 -->
-    <div class="checkpoint-box">
-        <div class="checkpoint-title">AI 체크포인트 — 유형 판별 확인</div>
-        <div class="checkpoint-question">{{ "선택한 기계학습 유형에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 왜 이 유형(회귀/분류/군집)을 선택했나요? 출력값의 형태(수치/카테고리/그룹)를 중심으로 설명해보세요.\n2. 다른 유형은 왜 적합하지 않은지 이유를 들어 설명해보세요." }}</div>
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 유형 판별 확인</div>
+            <div class="checkpoint-question">{{ "선택한 기계학습 유형에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 왜 이 유형(회귀/분류/군집)을 선택했나요? 출력값의 형태(수치/카테고리/그룹)를 중심으로 설명해보세요.\n2. 다른 유형은 왜 적합하지 않은지 이유를 들어 설명해보세요." }}</div>
 
-        {% if already_completed %}
-        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
-        <div class="step-nav">
-            <a href="{{ url_for('student.stage2_step', step=1) }}" class="btn btn-secondary">← 이전</a>
-            <a href="{{ url_for('student.stage2_step', step=3) }}" class="btn btn-primary">다음: 문제 정의서 →</a>
-        </div>
-        {% else %}
-        <div class="chat-box" id="chat_2_2"></div>
-        <textarea id="answer_2_2" class="form-control" rows="4"
-                  placeholder="여기에 답변을 작성해주세요..."></textarea>
-        <div style="margin-top:12px; display:flex; gap:8px;">
-            <button id="submit_2_2" class="btn btn-success"
-                    onclick="submitCheckpoint(2, 2, 'submit_2_2', 'chat_2_2', 'next_2_2')">
-                제출하기
-            </button>
-            <button id="complete_2_2" class="btn btn-primary" style="display:none"
-                    onclick="completeCheckpoint(2, 2, 'next_2_2')">&#10003; 이해했습니다</button>
-        </div>
-        <form method="POST" id="stage2_step2_form">
-            <input type="hidden" name="ml_type" id="ml_type_hidden">
-            <input type="hidden" name="ml_reason" id="ml_reason_hidden">
+            {% if already_completed %}
+            <div class="completed-notice" style="margin-top:0;">&#10003; 이미 완료한 단계입니다. 내용을 수정한 뒤 저장할 수 있습니다.</div>
+            {% endif %}
+
+            <div class="chat-box" id="chat_2_2"></div>
+            <textarea id="answer_2_2" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_2_2" class="btn btn-success"
+                        onclick="submitCheckpoint(2, 2, 'submit_2_2', 'chat_2_2', 'next_2_2')">제출하기</button>
+                <button type="button" id="complete_2_2" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(2, 2, 'next_2_2')">&#10003; 이해했습니다</button>
+            </div>
             <div class="step-nav" style="margin-top:16px;">
                 <a href="{{ url_for('student.stage2_step', step=1) }}" class="btn btn-secondary">← 이전</a>
+                {% if already_completed %}
+                <button type="submit" class="btn btn-primary">저장하고 다음으로 →</button>
+                {% else %}
                 <button type="submit" id="next_2_2" class="btn btn-primary" disabled style="display:none">다음: 문제 정의서 →</button>
+                {% endif %}
             </div>
-        </form>
-        {% endif %}
-    </div>
+        </div>
+
+    </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 function selectType(val) {
-    ['regression','classification','clustering'].forEach(v => {
+    ['regression','classification','clustering'].forEach(function(v) {
         document.getElementById('label_' + v).style.borderColor = (v === val) ? '#6366F1' : '#e2e8f0';
         document.getElementById('label_' + v).style.background  = (v === val) ? '#eef2ff' : '';
     });
 }
-document.getElementById('stage2_step2_form')?.addEventListener('submit', function() {
-    const checked = document.querySelector('input[name="ml_type_ui"]:checked');
-    document.getElementById('ml_type_hidden').value   = checked ? checked.value : '';
-    document.getElementById('ml_reason_hidden').value = document.getElementById('ml_reason_input').value;
-});
+
+// 저장된 유형이 있으면 테두리 하이라이트 복원
+var savedType = '{{ idea.ml_type if idea and idea.ml_type else "" }}';
+if (savedType) { selectType(savedType); }
+
 loadChatHistory(2, 2, 'chat_2_2');
 </script>
 {% endblock %}

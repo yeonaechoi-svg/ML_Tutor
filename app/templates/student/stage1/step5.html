@@ -152,7 +152,14 @@ print(classification_report(y_test, y_pred))</pre>
         <div class="checkpoint-question">{{ "다음 두 가지 질문에 답해보세요.\n\n1. 의사결정 트리, 랜덤 포레스트, KNN 중 하나를 선택하고 그 알고리즘의 동작 원리를 자신의 말로 설명해보세요.\n2. 랜덤 포레스트가 의사결정 트리보다 정확도가 높은 이유는 무엇인가요?" }}</div>
 
         {% if already_completed %}
-        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
+        <div class="completed-notice">&#10003; 이미 완료한 단계입니다.</div>
+        <div class="chat-box" id="chat_1_5"></div>
+        <textarea id="answer_1_5" class="form-control" rows="3"
+                  placeholder="AI 튜터에게 추가 질문을 할 수 있습니다..."></textarea>
+        <div style="margin-top:10px;">
+            <button id="submit_1_5" class="btn btn-success"
+                    onclick="submitCheckpoint(1, 5, 'submit_1_5', 'chat_1_5', null)">추가 질문하기</button>
+        </div>
         <div class="step-nav">
             <a href="{{ url_for('student.stage1_step', step=4) }}" class="btn btn-secondary">← 이전</a>
             <a href="{{ url_for('student.stage1_step', step=6) }}" class="btn btn-primary">다음: 실습 C →</a>

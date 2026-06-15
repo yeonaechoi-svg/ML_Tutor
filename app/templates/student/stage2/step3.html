@@ -8,12 +8,13 @@
     <!-- 진행 표시 -->
     <div style="display:flex; gap:6px; margin-bottom:24px;">
         {% for i, label in [(1,'주제 선정'),(2,'유형 판별'),(3,'문제 정의서')] %}
-        <div style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid;
-            {% if i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
-            {% elif i == 3 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5;
+        <a href="{{ url_for('student.stage2_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none; cursor:pointer;
+            {% if i == 3 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
             {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
             {% if i in completed %}✓ {% endif %}{{ label }}
-        </div>
+        </a>
         {% endfor %}
     </div>
 
@@ -61,86 +62,72 @@
         </div>
     </div>
 
-    {% if already_completed %}
-    <div class="section">
-        <h3 class="section-title">작성한 문제 정의서</h3>
-        <div style="background:#f8fafc; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:14px;">
-            {% for label, value in [
-                ('해결하려는 문제', idea.problem_statement),
-                ('입력 데이터 (X)', idea.input_data),
-                ('출력 목표 (y)',   idea.output_target)
-            ] %}
-            <div style="border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
-                <div style="font-size:12px; font-weight:700; color:#6366F1; margin-bottom:4px;">{{ label }}</div>
-                <div style="font-size:14px; color:#1e293b;">{{ value or '미입력' }}</div>
+    <form method="POST" id="stage2_step3_form">
+        <input type="hidden" name="problem_statement" id="ps_hidden">
+        <input type="hidden" name="input_data" id="id_hidden">
+        <input type="hidden" name="output_target" id="ot_hidden">
+
+        <div class="section">
+            <h3 class="section-title">문제 정의서 작성</h3>
+
+            {% if already_completed %}
+            <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 내용을 수정한 뒤 저장할 수 있습니다.</div>
+            {% endif %}
+
+            <div class="form-group">
+                <label class="form-label" for="problem_statement">해결하려는 문제</label>
+                <textarea class="form-control" id="problem_statement" rows="3"
+                          placeholder="예: 날씨(기온, 습도, 강수량)와 요일 데이터를 이용하여 자전거 일일 대여량을 예측한다.">{{ idea.problem_statement if idea else '' }}</textarea>
             </div>
-            {% endfor %}
+            <div class="form-group">
+                <label class="form-label" for="input_data">입력 데이터 (X) — 어떤 데이터를 사용할 건가요?</label>
+                <input class="form-control" type="text" id="input_data"
+                       placeholder="예: 기온(°C), 습도(%), 강수량(mm), 요일, 계절"
+                       value="{{ idea.input_data if idea else '' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="output_target">출력 목표 (y) — 무엇을 예측/분류할 건가요?</label>
+                <input class="form-control" type="text" id="output_target"
+                       placeholder="예: 자전거 일일 대여량 (단위: 개)"
+                       value="{{ idea.output_target if idea else '' }}">
+            </div>
         </div>
-    </div>
 
-    <div class="checkpoint-box">
-        <div class="checkpoint-title">AI 체크포인트 — 문제 정의 확인</div>
-        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 수고했어요!</div>
-        <div class="step-nav">
-            <a href="{{ url_for('student.stage2_step', step=2) }}" class="btn btn-secondary">← 이전</a>
-            <a href="{{ url_for('student.dashboard') }}" class="btn btn-success">학습 현황으로 →</a>
-        </div>
-    </div>
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 문제 정의 확인</div>
+            <div class="checkpoint-question">{{ "작성한 문제 정의서에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 입력 데이터(X)와 출력 목표(y)가 선택한 기계학습 유형과 일치하는지 확인해보세요.\n2. 이 데이터를 실제로 어떻게 수집할 수 있을지 방법을 생각해보세요." }}</div>
 
-    {% else %}
-    <div class="section">
-        <h3 class="section-title">문제 정의서 작성</h3>
-        <div class="form-group">
-            <label class="form-label" for="problem_statement">해결하려는 문제</label>
-            <textarea class="form-control" id="problem_statement" rows="3"
-                      placeholder="예: 날씨(기온, 습도, 강수량)와 요일 데이터를 이용하여 자전거 일일 대여량을 예측한다.">{{ idea.problem_statement if idea else '' }}</textarea>
-        </div>
-        <div class="form-group">
-            <label class="form-label" for="input_data">입력 데이터 (X) — 어떤 데이터를 사용할 건가요?</label>
-            <input class="form-control" type="text" id="input_data"
-                   placeholder="예: 기온(°C), 습도(%), 강수량(mm), 요일, 계절"
-                   value="{{ idea.input_data if idea else '' }}">
-        </div>
-        <div class="form-group">
-            <label class="form-label" for="output_target">출력 목표 (y) — 무엇을 예측/분류할 건가요?</label>
-            <input class="form-control" type="text" id="output_target"
-                   placeholder="예: 자전거 일일 대여량 (단위: 개)"
-                   value="{{ idea.output_target if idea else '' }}">
-        </div>
-    </div>
+            {% if already_completed %}
+            <div class="completed-notice" style="margin-top:0;">&#10003; 이미 완료한 단계입니다. 내용을 수정한 뒤 저장할 수 있습니다.</div>
+            {% endif %}
 
-    <!-- AI 체크포인트 -->
-    <div class="checkpoint-box">
-        <div class="checkpoint-title">AI 체크포인트 — 문제 정의 확인</div>
-        <div class="checkpoint-question">{{ "작성한 문제 정의서에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 입력 데이터(X)와 출력 목표(y)가 선택한 기계학습 유형과 일치하는지 확인해보세요.\n2. 이 데이터를 실제로 어떻게 수집할 수 있을지 방법을 생각해보세요." }}</div>
-        <div class="chat-box" id="chat_2_3"></div>
-        <textarea id="answer_2_3" class="form-control" rows="4"
-                  placeholder="여기에 답변을 작성해주세요..."></textarea>
-        <div style="margin-top:12px; display:flex; gap:8px;">
-            <button id="submit_2_3" class="btn btn-success"
-                    onclick="submitCheckpoint(2, 3, 'submit_2_3', 'chat_2_3', 'next_2_3')">
-                제출하기
-            </button>
-            <button id="complete_2_3" class="btn btn-primary" style="display:none"
-                    onclick="completeCheckpoint(2, 3, 'next_2_3')">&#10003; 이해했습니다</button>
-        </div>
-        <form method="POST" id="stage2_step3_form">
-            <input type="hidden" name="problem_statement" id="ps_hidden">
-            <input type="hidden" name="input_data" id="id_hidden">
-            <input type="hidden" name="output_target" id="ot_hidden">
+            <div class="chat-box" id="chat_2_3"></div>
+            <textarea id="answer_2_3" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_2_3" class="btn btn-success"
+                        onclick="submitCheckpoint(2, 3, 'submit_2_3', 'chat_2_3', 'next_2_3')">제출하기</button>
+                <button type="button" id="complete_2_3" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(2, 3, 'next_2_3')">&#10003; 이해했습니다</button>
+            </div>
             <div class="step-nav" style="margin-top:16px;">
                 <a href="{{ url_for('student.stage2_step', step=2) }}" class="btn btn-secondary">← 이전</a>
+                {% if already_completed %}
+                <button type="submit" class="btn btn-success">저장하고 완료 →</button>
+                {% else %}
                 <button type="submit" id="next_2_3" class="btn btn-primary" disabled style="display:none">2단계 완료 →</button>
+                {% endif %}
             </div>
-        </form>
-    </div>
-    {% endif %}
+        </div>
+
+    </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.getElementById('stage2_step3_form')?.addEventListener('submit', function() {
+document.getElementById('stage2_step3_form').addEventListener('submit', function() {
     document.getElementById('ps_hidden').value = document.getElementById('problem_statement').value;
     document.getElementById('id_hidden').value = document.getElementById('input_data').value;
     document.getElementById('ot_hidden').value = document.getElementById('output_target').value;

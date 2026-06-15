@@ -8,123 +8,565 @@
     <!-- 진행 표시 -->
     <div style="display:flex; gap:6px; margin-bottom:24px;">
         {% for i, label in [(1,'주제 선정'),(2,'유형 판별'),(3,'문제 정의서')] %}
-        <div style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid;
-            {% if i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
-            {% elif i == 1 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5;
+        <a href="{{ url_for('student.stage2_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none; cursor:pointer;
+            {% if i == 1 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
             {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
             {% if i in completed %}✓ {% endif %}{{ label }}
-        </div>
+        </a>
         {% endfor %}
     </div>
 
     <div class="section">
         <h3 class="section-title">스텝 1 — 주제 선정</h3>
-        <p>기계학습으로 해결하고 싶은 <strong>사회 문제나 궁금한 현상</strong>을 주제로 선정합니다. 좋은 주제는 데이터로 측정할 수 있고, 예측하거나 분류할 명확한 목표가 있습니다.</p>
+        <p style="font-size:14px; color:#475569; line-height:1.8;">아래 단계를 따라 나의 관심 분야에서 <strong>기계학습으로 해결할 주제</strong>를 찾아보세요.</p>
     </div>
 
-    <div class="section">
-        <h3 class="section-title">좋은 주제의 조건</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-            <div style="background:#f0fdf4; border-radius:10px; padding:14px; border-left:3px solid #10b981;">
-                <div style="font-size:12px; font-weight:700; color:#059669; margin-bottom:8px;">✅ 좋은 주제</div>
-                <ul style="font-size:13px; color:#374151; line-height:2; padding-left:16px;">
-                    <li>데이터로 측정 가능한 것</li>
-                    <li>예측/분류/군집 목표가 명확한 것</li>
-                    <li>공공데이터로 수집 가능한 것</li>
-                    <li>사회적으로 유용한 것</li>
-                </ul>
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 내용을 수정하고 저장할 수 있습니다.</div>
+    {% endif %}
+
+    <form method="POST" id="stage2_step1_form">
+
+        <!-- ════ SECTION 1: 아이디어 도출 과정 ════ -->
+        <div class="section">
+            <h3 class="section-title">1. 아이디어 도출 과정</h3>
+            <p style="font-size:13px; color:#64748b; margin-bottom:16px;">1-1 → 1-2 → 1-3 순서대로 작성하면 나만의 기계학습 주제를 찾을 수 있습니다.</p>
+
+            <!-- 1-1. 관심 분야 탐색 -->
+            <div style="background:#f5f3ff; border-radius:12px; padding:18px; margin-bottom:14px; border-left:4px solid #6366F1;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                    <div style="width:32px; height:32px; background:#6366F1; color:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;">1-1</div>
+                    <div style="font-size:14px; font-weight:700; color:#4338ca;">관심 분야 탐색</div>
+                </div>
+                <p style="font-size:13px; color:#475569; margin-bottom:10px; line-height:1.7;">내가 평소에 관심 있거나 더 알고 싶은 분야를 떠올려 보세요. 아래 분야를 클릭하거나 직접 입력해도 좋습니다.</p>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+                    {% for f in ['환경/기후','교통/도시','건강/의료','교육','경제/소비','농업/식품','스포츠','문화/엔터','IT/기술','사회 안전'] %}
+                    <span style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; border-radius:16px; padding:4px 12px; font-size:12px; cursor:pointer;"
+                          onclick="appendText('interest_field','{{ f }}')">{{ f }}</span>
+                    {% endfor %}
+                </div>
+                <textarea name="interest_field" id="interest_field" class="form-control" rows="2"
+                          placeholder="예: 환경/기후 분야에 관심이 있다. 특히 미세먼지 문제가 궁금하다.">{{ idea.interest_field if idea else '' }}</textarea>
+
+                <div style="margin-top:10px;">
+                    <button type="button" id="suggest-btn" onclick="suggestProblems()"
+                            style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:linear-gradient(135deg,#6366F1,#8b5cf6); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <span id="suggest-btn-icon">✨</span>
+                        <span id="suggest-btn-text">AI에게 문제 상황 예시 받기</span>
+                    </button>
+                </div>
+
+                <div id="problem-suggestions" style="display:none; margin-top:14px;">
+                    <div style="font-size:12px; font-weight:700; color:#6366F1; margin-bottom:8px;">
+                        💡 아래 예시 중 하나를 클릭하면 1-2 입력창에 자동으로 추가됩니다.
+                    </div>
+                    <div id="suggestion-cards" style="display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
             </div>
-            <div style="background:#fef2f2; border-radius:10px; padding:14px; border-left:3px solid #ef4444;">
-                <div style="font-size:12px; font-weight:700; color:#dc2626; margin-bottom:8px;">❌ 피해야 할 주제</div>
-                <ul style="font-size:13px; color:#374151; line-height:2; padding-left:16px;">
-                    <li>데이터 수집이 불가능한 것</li>
-                    <li>결과가 너무 주관적인 것</li>
-                    <li>이미 정해진 답이 있는 것</li>
-                    <li>범위가 너무 넓은 것</li>
-                </ul>
+
+            <!-- 1-2. 문제 상황 발견 -->
+            <div style="background:#faf5ff; border-radius:12px; padding:18px; margin-bottom:14px; border-left:4px solid #8b5cf6;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                    <div style="width:32px; height:32px; background:#8b5cf6; color:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;">1-2</div>
+                    <div style="font-size:14px; font-weight:700; color:#7c3aed;">문제 상황 발견</div>
+                </div>
+                <p style="font-size:13px; color:#475569; margin-bottom:10px; line-height:1.7;">선택한 분야에서 <strong>불편하거나 개선되었으면 하는 문제 상황</strong>은 무엇인가요? 여러 가지를 자유롭게 써보세요.</p>
+                <textarea name="problem_situation" id="problem_situation" class="form-control" rows="3"
+                          placeholder="예: ① 미세먼지가 심한 날 야외 활동을 해도 되는지 판단하기 어렵다. ② 지역마다 공기질 정보를 확인하는 방법이 달라서 불편하다.">{{ idea.problem_situation if idea else '' }}</textarea>
+
+                <div style="margin-top:10px;">
+                    <button type="button" id="suggest-ml-btn" onclick="suggestMLSolutions()"
+                            style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:linear-gradient(135deg,#8b5cf6,#a855f7); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <span id="suggest-ml-icon">🤖</span>
+                        <span id="suggest-ml-text">기계학습으로 해결 가능한 문제 예시 받기</span>
+                    </button>
+                </div>
+
+                <div id="ml-suggestions" style="display:none; margin-top:14px;">
+                    <div style="font-size:12px; font-weight:700; color:#8b5cf6; margin-bottom:8px;">
+                        🤖 아래 예시 중 하나를 클릭하면 1-3 입력창에 자동으로 추가됩니다.
+                    </div>
+                    <div id="ml-suggestion-cards" style="display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
+            </div>
+
+            <!-- 1-3. 기계학습으로 해결할 문제 선택 -->
+            <div style="background:#fdf4ff; border-radius:12px; padding:18px; border-left:4px solid #a855f7;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                    <div style="width:32px; height:32px; background:#a855f7; color:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;">1-3</div>
+                    <div style="font-size:14px; font-weight:700; color:#9333ea;">기계학습으로 해결할 문제 선택</div>
+                </div>
+                <p style="font-size:13px; color:#475569; margin-bottom:8px; line-height:1.7;">위 문제 중 <strong>데이터를 수집하여 예측·분류·군집으로 해결할 수 있는 것</strong>을 골라 구체적으로 작성하세요.</p>
+                <div style="background:#f3e8ff; border-radius:8px; padding:10px 12px; margin-bottom:10px; font-size:12px; color:#6b21a8; line-height:1.7;">
+                    💡 힌트: "~을 예측한다", "~을 분류한다", "~을 그룹으로 나눈다" 형태로 써보세요.
+                </div>
+                <textarea name="ml_problem" id="ml_problem" class="form-control" rows="2"
+                          placeholder="예: 미세먼지 농도(PM10, PM2.5) 데이터를 이용하여 야외활동 위험도를 '안전/보통/위험'으로 분류한다.">{{ idea.ml_problem if idea else '' }}</textarea>
+            </div>
+
+            <!-- Section 1 저장 버튼 -->
+            <div style="display:flex; align-items:center; gap:12px; margin-top:18px;">
+                <button type="button" id="save-section1-btn" onclick="saveSection1()"
+                        class="btn btn-secondary" style="padding:10px 24px; font-size:14px;">
+                    💾 저장하기
+                </button>
+                <div id="s1-toast" style="display:none; font-size:13px; color:#059669; font-weight:600; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 14px;">
+                    ✓ 저장되었습니다.
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="section">
-        <h3 class="section-title">주제 예시</h3>
-        <div style="display:flex; flex-wrap:wrap; gap:8px;">
-            {% for ex in [
-                '학교 급식 잔반량 예측',
-                '대기질(미세먼지)에 따른 야외활동 위험도 분류',
-                '지역별 편의점 매출 예측',
-                '교통사고 심각도 분류',
-                '아파트 전세가격 예측',
-                '온라인 쇼핑몰 고객 군집 분석',
-                '날씨에 따른 자전거 대여량 예측',
-                '학생 성적 예측'
-            ] %}
-            <span style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; border-radius:20px; padding:5px 14px; font-size:13px; cursor:pointer;"
-                  onclick="document.getElementById('topic').value='{{ ex }}'">
-                {{ ex }}
-            </span>
-            {% endfor %}
-        </div>
-        <p style="font-size:12px; color:#94a3b8; margin-top:8px;">예시를 클릭하면 입력창에 자동 입력됩니다.</p>
-    </div>
+        <!-- ════ SECTION 2: 문제 정의 ════ -->
+        <div class="section">
+            <h3 class="section-title">2. 문제 정의</h3>
+            <p style="font-size:13px; color:#475569; margin-bottom:6px; line-height:1.7;">1-3에서 선택한 기계학습 문제를 아래 네 가지 관점으로 정리해 보세요.</p>
+            <div style="font-size:12px; color:#64748b; background:#f8fafc; border-radius:8px; padding:10px 14px; margin-bottom:16px; border-left:3px solid #cbd5e1;">
+                💡 1-3을 입력하고 저장하면 각 항목에 예시 힌트가 자동으로 채워집니다. 항목을 클릭하면 힌트가 지워지고 직접 입력할 수 있습니다.
+            </div>
 
-    <div class="section">
-        <h3 class="section-title">나의 주제 입력</h3>
-        {% if already_completed %}
-        <div class="info-box">
-            <strong>선정한 주제:</strong> {{ idea.topic if idea else '' }}
-            <br><span style="font-size:12px; color:#64748b; margin-top:4px; display:block;">이미 완료한 단계입니다.</span>
-        </div>
-        {% else %}
-        <div class="form-group">
-            <label class="form-label" for="topic">주제를 입력하세요</label>
-            <input class="form-control" type="text" id="topic" name="topic_preview"
-                   placeholder="예: 날씨에 따른 자전거 대여량 예측"
-                   value="{{ idea.topic if idea else '' }}">
-        </div>
-        {% endif %}
-    </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                <div style="background:#eff6ff; border-radius:12px; padding:16px; border-left:4px solid #1d4ed8;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <div style="width:32px; height:32px; background:#1d4ed8; color:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0;">2-1</div>
+                        <div style="font-size:13px; font-weight:700; color:#1d4ed8;">현재 상태 (문제 인식)</div>
+                    </div>
+                    <p style="font-size:12px; color:#64748b; margin-bottom:8px; line-height:1.6;">지금 어떤 문제가 있나요?</p>
+                    <textarea name="current_state" id="current_state" class="form-control" rows="4"
+                              placeholder="1-3을 저장하면 예시 힌트가 채워집니다.">{{ idea.current_state if idea else '' }}</textarea>
+                </div>
+                <div style="background:#f0fdf4; border-radius:12px; padding:16px; border-left:4px solid #059669;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <div style="width:32px; height:32px; background:#059669; color:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0;">2-2</div>
+                        <div style="font-size:13px; font-weight:700; color:#059669;">목표 상태 (해결 방향)</div>
+                    </div>
+                    <p style="font-size:12px; color:#64748b; margin-bottom:8px; line-height:1.6;">기계학습을 적용하면 어떤 상태가 되면 좋을까요?</p>
+                    <textarea name="target_state" id="target_state" class="form-control" rows="4"
+                              placeholder="1-3을 저장하면 예시 힌트가 채워집니다.">{{ idea.target_state if idea else '' }}</textarea>
+                </div>
+                <div style="background:#fefce8; border-radius:12px; padding:16px; border-left:4px solid #ca8a04;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <div style="width:32px; height:32px; background:#ca8a04; color:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0;">2-3</div>
+                        <div style="font-size:13px; font-weight:700; color:#ca8a04;">핵심 요소 추출</div>
+                    </div>
+                    <p style="font-size:12px; color:#64748b; margin-bottom:8px; line-height:1.6;">이 문제와 관련된 주요 데이터(변수)는 무엇인가요?</p>
+                    <textarea name="key_elements" id="key_elements" class="form-control" rows="4"
+                              placeholder="1-3을 저장하면 예시 힌트가 채워집니다.">{{ idea.key_elements if idea else '' }}</textarea>
+                </div>
+                <div style="background:#fdf4ff; border-radius:12px; padding:16px; border-left:4px solid #9333ea;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <div style="width:32px; height:32px; background:#9333ea; color:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0;">2-4</div>
+                        <div style="font-size:13px; font-weight:700; color:#9333ea;">작은 문제로 분해</div>
+                    </div>
+                    <p style="font-size:12px; color:#64748b; margin-bottom:8px; line-height:1.6;">큰 문제를 해결 단계별로 나눠보세요.</p>
+                    <textarea name="sub_problems" id="sub_problems" class="form-control" rows="4"
+                              placeholder="1-3을 저장하면 예시 힌트가 채워집니다.">{{ idea.sub_problems if idea else '' }}</textarea>
+                </div>
+            </div>
 
-    <!-- AI 체크포인트 -->
-    <div class="checkpoint-box">
-        <div class="checkpoint-title">AI 체크포인트 — 주제 적합성 확인</div>
-        <div class="checkpoint-question">{{ "선택한 주제에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 이 주제에서 기계학습으로 해결하려는 문제가 무엇인지 한 문장으로 설명해보세요.\n2. 이 문제를 기계학습으로 해결하면 어떤 점이 유용한가요?" }}</div>
-
-        {% if already_completed %}
-        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
-        <div class="step-nav">
-            <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary">← 학습 현황</a>
-            <a href="{{ url_for('student.stage2_step', step=2) }}" class="btn btn-primary">다음: 유형 판별 →</a>
+            <!-- Section 2 저장 버튼 -->
+            <div style="display:flex; align-items:center; gap:10px; margin-top:18px; flex-wrap:wrap;">
+                <button type="button" id="save-section2-btn" onclick="saveSection2()"
+                        class="btn btn-secondary" style="padding:10px 24px; font-size:14px;">
+                    💾 저장하기
+                </button>
+                <button type="button" id="apply-section2-btn" onclick="applyAndSaveSection2()"
+                        style="padding:10px 24px; font-size:14px; background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                    ✨ 예시대로 적용하여 저장하기
+                </button>
+                <div id="s2-toast" style="display:none; font-size:13px; color:#059669; font-weight:600; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 14px;">
+                    ✓ 저장되었습니다.
+                </div>
+            </div>
         </div>
-        {% else %}
-        <div class="chat-box" id="chat_2_1"></div>
-        <textarea id="answer_2_1" class="form-control" rows="4"
-                  placeholder="여기에 답변을 작성해주세요..."></textarea>
-        <div style="margin-top:12px; display:flex; gap:8px;">
-            <button id="submit_2_1" class="btn btn-success"
-                    onclick="submitCheckpoint(2, 1, 'submit_2_1', 'chat_2_1', 'next_2_1')">
-                제출하기
+
+        <!-- ════ SECTION 3: 최종 주제 선정 ════ -->
+        <div class="section">
+            <h3 class="section-title">3. 최종 주제 선정</h3>
+            <p style="font-size:13px; color:#64748b; margin-bottom:10px;">위의 과정을 통해 도출한 나의 <strong>최종 주제</strong>를 한 문장으로 입력하세요.</p>
+            <div class="form-group">
+                <label class="form-label" for="topic">나의 주제</label>
+                <input class="form-control" type="text" id="topic" name="topic"
+                       placeholder="예: 날씨에 따른 자전거 대여량 예측"
+                       value="{{ idea.topic if idea else '' }}"
+                       style="font-size:15px; font-weight:600;">
+            </div>
+            <button type="submit" name="save_action" value="save_only"
+                    class="btn btn-secondary" style="margin-top:4px; padding:10px 24px;">
+                💾 저장
             </button>
-            <button id="complete_2_1" class="btn btn-primary" style="display:none"
-                    onclick="completeCheckpoint(2, 1, 'next_2_1')">&#10003; 이해했습니다</button>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+            <div style="margin-top:8px; padding:8px 14px; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; font-size:13px; color:#15803d; font-weight:600;">
+                ✓ {{ message }}
+            </div>
+            {% endfor %}
+            {% endwith %}
         </div>
-        <form method="POST" id="stage2_step1_form">
-            <input type="hidden" name="topic" id="topic_hidden">
+
+        <!-- AI 체크포인트 -->
+        <div class="checkpoint-box">
+            <div class="checkpoint-title">AI 체크포인트 — 주제 적합성 확인</div>
+            <div class="checkpoint-question">{{ "선택한 주제에 대해 다음 두 가지 질문에 답해보세요.\n\n1. 이 주제에서 기계학습으로 해결하려는 문제가 무엇인지 한 문장으로 설명해보세요.\n2. 이 문제를 기계학습으로 해결하면 어떤 점이 유용한가요?" }}</div>
+
+            <div class="chat-box" id="chat_2_1"></div>
+            <textarea id="answer_2_1" class="form-control" rows="4"
+                      placeholder="여기에 답변을 작성해주세요..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="button" id="submit_2_1" class="btn btn-success"
+                        onclick="submitCheckpoint(2, 1, 'submit_2_1', 'chat_2_1', 'next_2_1')">제출하기</button>
+                <button type="button" id="complete_2_1" class="btn btn-primary" style="display:none"
+                        onclick="completeCheckpoint(2, 1, 'next_2_1')">&#10003; 이해했습니다</button>
+            </div>
             <div class="step-nav" style="margin-top:16px;">
                 <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary">← 학습 현황</a>
+                {% if already_completed %}
+                <button type="submit" class="btn btn-primary">저장하고 다음으로 →</button>
+                {% else %}
                 <button type="submit" id="next_2_1" class="btn btn-primary" disabled style="display:none">다음: 유형 판별 →</button>
+                {% endif %}
             </div>
-        </form>
-        {% endif %}
-    </div>
+        </div>
+
+    </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.getElementById('stage2_step1_form')?.addEventListener('submit', function() {
-    document.getElementById('topic_hidden').value = document.getElementById('topic').value;
+// ── 유틸 ──────────────────────────────────────────────────────────────────
+
+function appendText(fieldId, text) {
+    var el = document.getElementById(fieldId);
+    if (!el) return;
+    el.value = el.value ? el.value + ', ' + text : text;
+    el.focus();
+}
+
+// 고스트 텍스트: textarea에 회색 힌트 텍스트를 채운다. 클릭하면 지워진다.
+function setGhostText(el, text) {
+    if (!el || el.value.trim()) return; // 이미 값이 있으면 덮어쓰지 않음
+    el.value = text;
+    el.style.color = '#94a3b8';
+    el.setAttribute('data-ghost', 'true');
+
+    el.addEventListener('focus', function activateGhost() {
+        if (el.getAttribute('data-ghost') === 'true') {
+            el.style.color = '';
+            el.removeAttribute('data-ghost');
+        }
+        el.removeEventListener('focus', activateGhost);
+    }, { once: true });
+}
+
+// 고스트 필드는 제출 전에 비워야 한다.
+function clearGhostFields() {
+    document.querySelectorAll('[data-ghost="true"]').forEach(function(el) {
+        el.value = '';
+        el.style.color = '';
+        el.removeAttribute('data-ghost');
+    });
+}
+
+function showToast(toastId, btnId, label) {
+    var toast = document.getElementById(toastId);
+    var btn = document.getElementById(btnId);
+    if (toast) { toast.style.display = 'block'; setTimeout(function(){ toast.style.display='none'; }, 3000); }
+    if (btn) { btn.textContent = '✓ 저장됨'; setTimeout(function(){ btn.innerHTML = '💾 저장하기'; }, 3000); }
+}
+
+// ── Section 1 AJAX 저장 ───────────────────────────────────────────────────
+
+function saveSection1() {
+    var btn = document.getElementById('save-section1-btn');
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+
+    var formData = new FormData();
+    formData.append('interest_field', document.getElementById('interest_field').value);
+    formData.append('problem_situation', document.getElementById('problem_situation').value);
+    formData.append('ml_problem', document.getElementById('ml_problem').value);
+    formData.append('topic', document.getElementById('topic').value);
+    // 문제 정의 필드: 고스트가 아닌 값만 포함
+    ['current_state','target_state','key_elements','sub_problems'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && el.getAttribute('data-ghost') !== 'true') {
+            formData.append(id, el.value);
+        }
+    });
+    formData.append('save_action', 'save_only');
+
+    fetch(window.location.pathname, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        showToast('s1-toast', 'save-section1-btn', '💾 저장하기');
+
+        // ml_problem이 있으면 문제 정의 예시 생성
+        var mlProblem = document.getElementById('ml_problem').value.trim();
+        if (mlProblem) {
+            generateDefinitionExamples(mlProblem);
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '💾 저장하기';
+        alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    });
+}
+
+// ── Section 2 저장 (공통 핵심 함수) ──────────────────────────────────────
+// applyGhost=true  → 고스트 필드를 실값으로 확정 후 저장 (예시대로 저장)
+// applyGhost=false → 고스트 필드는 건너뜀 (직접 입력한 값만 저장)
+
+function _sendSection2(applyGhost) {
+    var btn = document.getElementById('save-section2-btn');
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+
+    var formData = new FormData();
+    formData.append('interest_field', document.getElementById('interest_field').value);
+    formData.append('problem_situation', document.getElementById('problem_situation').value);
+    formData.append('ml_problem', document.getElementById('ml_problem').value);
+    formData.append('topic', document.getElementById('topic').value);
+
+    ['current_state','target_state','key_elements','sub_problems'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var isGhost = el.getAttribute('data-ghost') === 'true';
+        if (isGhost && applyGhost) {
+            // 예시를 실값으로 확정
+            el.style.color = '';
+            el.removeAttribute('data-ghost');
+            formData.append(id, el.value);
+        } else if (!isGhost) {
+            // 직접 입력한 값만 포함
+            formData.append(id, el.value);
+        }
+        // isGhost && !applyGhost → 고스트 필드 건너뜀 (저장 안 함)
+    });
+
+    formData.append('save_action', 'save_only');
+
+    fetch(window.location.pathname, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(function(res) { return res.json(); })
+    .then(function() {
+        btn.disabled = false;
+        showToast('s2-toast', 'save-section2-btn', '💾 저장하기');
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '💾 저장하기';
+        alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    });
+}
+
+function saveSection2()       { _sendSection2(false); }
+function applyAndSaveSection2() { _sendSection2(true);  }
+
+// 최종 제출 시 고스트 필드 비우기
+document.getElementById('stage2_step1_form').addEventListener('submit', function() {
+    clearGhostFields();
 });
+
+// ── AI 문제 정의 예시 생성 ────────────────────────────────────────────────
+
+function generateDefinitionExamples(mlProblem) {
+    var loadingMsg = '예시 힌트를 생성 중입니다...';
+    ['current_state','target_state','key_elements','sub_problems'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.value.trim()) { el.placeholder = loadingMsg; }
+    });
+
+    fetch('/ai-tutor/suggest-definitions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ml_problem: mlProblem })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.error) return;
+
+        var mapping = {
+            current_state: data.current_state,
+            target_state:  data.target_state,
+            key_elements:  data.key_elements,
+            sub_problems:  data.sub_problems
+        };
+        Object.keys(mapping).forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el && mapping[id]) {
+                el.placeholder = '예시: ' + mapping[id]; // 기본 placeholder 복원
+                setGhostText(el, mapping[id]);
+            }
+        });
+    })
+    .catch(function() {
+        // 예시 생성 실패 시 기본 placeholder 복원
+        ['current_state','target_state','key_elements','sub_problems'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el && !el.value.trim()) { el.placeholder = '직접 입력해주세요.'; }
+        });
+    });
+}
+
+// ── AI 문제 상황 예시 ────────────────────────────────────────────────────
+
+function suggestProblems() {
+    var interest = document.getElementById('interest_field').value.trim();
+    if (!interest) { alert('관심 분야를 먼저 입력해주세요.'); return; }
+
+    var btn = document.getElementById('suggest-btn');
+    var btnText = document.getElementById('suggest-btn-text');
+    var btnIcon = document.getElementById('suggest-btn-icon');
+    btn.disabled = true;
+    btnIcon.textContent = '⏳';
+    btnText.textContent = 'AI가 예시를 생성 중입니다...';
+
+    fetch('/ai-tutor/suggest-problems', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interest_field: interest })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btnIcon.textContent = '✨';
+        btnText.textContent = 'AI에게 문제 상황 예시 다시 받기';
+
+        if (data.error) { alert(data.error); return; }
+
+        var container = document.getElementById('suggestion-cards');
+        container.innerHTML = '';
+        var icons = ['🌿','🚗','🏥','📚','💰','🌾','⚽','🎵','💻','🛡️','🔥','💧','🌍','📱','🏙️'];
+        data.problems.forEach(function(problem, i) {
+            var card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:#fff;border:1.5px solid #c4b5fd;border-radius:10px;cursor:pointer;transition:all 0.15s;';
+            card.onmouseover = function() { this.style.borderColor='#6366F1'; this.style.background='#f5f3ff'; this.style.transform='translateX(3px)'; };
+            card.onmouseout  = function() { this.style.borderColor='#c4b5fd'; this.style.background='#fff'; this.style.transform='translateX(0)'; };
+            card.onclick = (function(p, c) {
+                return function() {
+                    var ta = document.getElementById('problem_situation');
+                    ta.value = ta.value ? ta.value + '\n' + p : p;
+                    ta.focus();
+                    c.style.borderColor = '#059669'; c.style.background = '#f0fdf4';
+                    var ck = c.querySelector('.card-check'); if(ck) ck.style.display='inline';
+                };
+            })(problem, card);
+
+            var icon = document.createElement('span');
+            icon.textContent = icons[i % icons.length];
+            icon.style.cssText = 'font-size:18px;flex-shrink:0;margin-top:1px;';
+
+            var textWrap = document.createElement('div'); textWrap.style.flex = '1';
+            var num = document.createElement('span');
+            num.style.cssText = 'font-size:10px;font-weight:700;color:#8b5cf6;margin-right:6px;';
+            num.textContent = '예시 ' + (i + 1);
+            var check = document.createElement('span');
+            check.className = 'card-check';
+            check.textContent = ' ✓ 선택됨';
+            check.style.cssText = 'font-size:10px;color:#059669;font-weight:700;display:none;';
+            var txt = document.createElement('div');
+            txt.style.cssText = 'font-size:13px;color:#1e293b;line-height:1.6;margin-top:2px;';
+            txt.textContent = problem;
+
+            textWrap.appendChild(num); textWrap.appendChild(check); textWrap.appendChild(txt);
+            card.appendChild(icon); card.appendChild(textWrap);
+            container.appendChild(card);
+        });
+
+        document.getElementById('problem-suggestions').style.display = 'block';
+        document.getElementById('problem-suggestions').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    })
+    .catch(function() {
+        btn.disabled = false; btnIcon.textContent = '✨'; btnText.textContent = 'AI에게 문제 상황 예시 받기';
+        alert('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
+    });
+}
+
+// ── AI 기계학습 해결 방법 예시 ────────────────────────────────────────────
+
+function suggestMLSolutions() {
+    var situation = document.getElementById('problem_situation').value.trim();
+    if (!situation) { alert('문제 상황을 먼저 입력해주세요.'); return; }
+
+    var btn = document.getElementById('suggest-ml-btn');
+    var icon = document.getElementById('suggest-ml-icon');
+    var txt  = document.getElementById('suggest-ml-text');
+    btn.disabled = true; icon.textContent = '⏳'; txt.textContent = 'AI가 해결 방법을 분석 중입니다...';
+
+    fetch('/ai-tutor/suggest-ml-solutions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problem_situation: situation })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        btn.disabled = false; icon.textContent = '🤖'; txt.textContent = '기계학습 해결 방법 예시 다시 받기';
+        if (data.error) { alert(data.error); return; }
+
+        var container = document.getElementById('ml-suggestion-cards');
+        container.innerHTML = '';
+        var typeLabels = [
+            { label:'예측', color:'#1d4ed8', bg:'#eff6ff', border:'#bfdbfe' },
+            { label:'분류', color:'#059669', bg:'#f0fdf4', border:'#bbf7d0' },
+            { label:'군집', color:'#b45309', bg:'#fffbeb', border:'#fde68a' },
+            { label:'예측', color:'#1d4ed8', bg:'#eff6ff', border:'#bfdbfe' },
+            { label:'분류', color:'#059669', bg:'#f0fdf4', border:'#bbf7d0' },
+        ];
+        data.solutions.forEach(function(solution, i) {
+            var s = typeLabels[i % typeLabels.length];
+            if (solution.includes('예측')) s = typeLabels[0];
+            else if (solution.includes('분류')) s = typeLabels[1];
+            else if (solution.includes('군집') || solution.includes('그룹')) s = typeLabels[2];
+
+            var card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 16px;background:'+s.bg+';border:1.5px solid '+s.border+';border-radius:10px;cursor:pointer;transition:all 0.15s;';
+            card.onmouseover = function() { this.style.borderColor=s.color; this.style.transform='translateX(4px)'; };
+            card.onmouseout  = function() { this.style.borderColor=s.border; this.style.transform='translateX(0)'; };
+            card.onclick = (function(sol, c, st) {
+                return function() {
+                    var ta = document.getElementById('ml_problem');
+                    ta.value = ta.value ? ta.value + '\n' + sol : sol;
+                    ta.focus();
+                    c.style.borderColor='#059669'; c.style.background='#f0fdf4';
+                    var ck = c.querySelector('.ml-check'); if(ck) ck.style.display='inline';
+                };
+            })(solution, card, s);
+
+            var badge = document.createElement('span');
+            badge.style.cssText = 'flex-shrink:0;font-size:11px;font-weight:700;color:'+s.color+';background:'+s.bg+';border:1px solid '+s.border+';border-radius:12px;padding:2px 8px;';
+            badge.textContent = s.label;
+            var check = document.createElement('span');
+            check.className = 'ml-check';
+            check.textContent = '✓ 선택';
+            check.style.cssText = 'font-size:11px;color:#059669;font-weight:700;display:none;flex-shrink:0;';
+            var solText = document.createElement('span');
+            solText.style.cssText = 'font-size:13px;color:#1e293b;line-height:1.6;flex:1;';
+            solText.textContent = solution;
+
+            card.appendChild(badge); card.appendChild(solText); card.appendChild(check);
+            container.appendChild(card);
+        });
+
+        document.getElementById('ml-suggestions').style.display = 'block';
+        document.getElementById('ml-suggestions').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    })
+    .catch(function() {
+        btn.disabled = false; icon.textContent = '🤖'; txt.textContent = '기계학습으로 해결 가능한 문제 예시 받기';
+        alert('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
+    });
+}
+
 loadChatHistory(2, 1, 'chat_2_1');
 </script>
 {% endblock %}

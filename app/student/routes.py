@@ -1,7 +1,7 @@
-from flask import render_template, redirect, url_for, request, flash
+from flask import render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
 from app.student import student_bp
-from app.models import Progress, QuizResult, ProjectIdea
+from app.models import Progress, QuizResult, ProjectIdea, User
 from app import db
 from datetime import datetime
 
@@ -37,16 +37,31 @@ def get_completed_substeps(stage):
 @student_bp.route('/dashboard')
 @login_required
 def dashboard():
-    completed = get_completed_substeps(1)
-    current_substep = max(completed) + 1 if completed else 1
+    completed_s1 = get_completed_substeps(1)
+    completed_s2 = get_completed_substeps(2)
     quiz_result = QuizResult.query.filter_by(
         user_id=current_user.id, stage=1
     ).order_by(QuizResult.created_at.desc()).first()
+    idea = ProjectIdea.query.filter_by(user_id=current_user.id).first()
+
+    # 현재 진행 중인 전체 단계 계산
+    s1_done = len(completed_s1) >= 7
+    s2_done = len(completed_s2) >= 3
+    if s2_done:
+        current_stage = 3
+    elif s1_done:
+        current_stage = 2
+    else:
+        current_stage = 1
+
     return render_template(
         'student/dashboard.html',
-        completed=completed,
-        current_substep=current_substep,
-        quiz_result=quiz_result
+        completed=completed_s1,
+        completed_s1=completed_s1,
+        completed_s2=completed_s2,
+        current_stage=current_stage,
+        quiz_result=quiz_result,
+        idea=idea
     )
 
 
@@ -247,6 +262,13 @@ def stage2_step(step):
 
             if step == 1:
                 idea.topic = request.form.get('topic', '').strip()
+                idea.interest_field = request.form.get('interest_field', '').strip()
+                idea.problem_situation = request.form.get('problem_situation', '').strip()
+                idea.ml_problem = request.form.get('ml_problem', '').strip()
+                idea.current_state = request.form.get('current_state', '').strip()
+                idea.target_state = request.form.get('target_state', '').strip()
+                idea.key_elements = request.form.get('key_elements', '').strip()
+                idea.sub_problems = request.form.get('sub_problems', '').strip()
             elif step == 2:
                 idea.ml_type = request.form.get('ml_type', '')
                 idea.ml_reason = request.form.get('ml_reason', '').strip()
@@ -259,6 +281,12 @@ def stage2_step(step):
             db.session.commit()
         except Exception:
             db.session.rollback()
+
+        if request.form.get('save_action') == 'save_only':
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': True})
+            flash('저장되었습니다.', 'success')
+            return redirect(url_for('student.stage2_step', step=step))
 
         if step < 3:
             return redirect(url_for('student.stage2_step', step=step + 1))

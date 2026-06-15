@@ -86,12 +86,39 @@ function submitCheckpoint(stage, substep, btnId, chatBoxId, nextBtnId) {
     });
 }
 
+function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function applyInline(str) {
+    return str.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+
+function markdownToHtml(text) {
+    var html = '';
+    text.split('\n').forEach(function(line) {
+        var esc = escapeHtml(line);
+        if (/^## /.test(esc)) {
+            html += '<div class="chat-md-h2">' + applyInline(esc.slice(3)) + '</div>';
+        } else if (/^### /.test(esc)) {
+            html += '<div class="chat-md-h3">' + applyInline(esc.slice(4)) + '</div>';
+        } else if (/^[-*] /.test(esc)) {
+            html += '<div class="chat-md-li">' + applyInline(esc.slice(2)) + '</div>';
+        } else if (esc.trim() === '') {
+            html += '<div style="height:5px"></div>';
+        } else {
+            html += '<div class="chat-md-p">' + applyInline(esc) + '</div>';
+        }
+    });
+    return html;
+}
+
 function appendFeedback(chatBoxId, content) {
     var chatBox = document.getElementById(chatBoxId);
     if (!chatBox) return;
     var bubble = document.createElement('div');
     bubble.className = 'chat-bubble assistant';
-    bubble.textContent = content;
+    bubble.innerHTML = markdownToHtml(content);
     chatBox.appendChild(bubble);
     chatBox.scrollTop = chatBox.scrollHeight;
 }

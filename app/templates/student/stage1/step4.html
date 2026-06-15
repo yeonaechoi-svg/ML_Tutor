@@ -132,7 +132,14 @@ print(<span class="code-string">f'평균제곱오차(MSE): {mean_squared_error(y
         <div class="checkpoint-question">{{ "다음 두 가지 질문에 답해보세요.\n\n1. 회귀 문제와 분류 문제의 차이를 설명하고, 선형 회귀가 적합한 상황의 예시를 들어보세요.\n2. 선형 회귀에서 독립 변수(X)와 종속 변수(y)의 역할을 자신의 말로 설명해보세요." }}</div>
 
         {% if already_completed %}
-        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
+        <div class="completed-notice">&#10003; 이미 완료한 단계입니다.</div>
+        <div class="chat-box" id="chat_1_4"></div>
+        <textarea id="answer_1_4" class="form-control" rows="3"
+                  placeholder="AI 튜터에게 추가 질문을 할 수 있습니다..."></textarea>
+        <div style="margin-top:10px;">
+            <button id="submit_1_4" class="btn btn-success"
+                    onclick="submitCheckpoint(1, 4, 'submit_1_4', 'chat_1_4', null)">추가 질문하기</button>
+        </div>
         <div class="step-nav">
             <a href="{{ url_for('student.stage1_step', step=3) }}" class="btn btn-secondary">← 이전</a>
             <a href="{{ url_for('student.stage1_step', step=5) }}" class="btn btn-primary">다음: 실습 B →</a>

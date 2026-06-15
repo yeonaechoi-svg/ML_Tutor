@@ -137,7 +137,14 @@ plt.show()</pre>
         <div class="checkpoint-question">{{ "다음 두 가지 질문에 답해보세요.\n\n1. K-평균 알고리즘의 동작 원리를 단계별로 설명해보세요.\n2. K-평균 군집이 지도학습의 분류와 다른 점은 무엇인가요?" }}</div>
 
         {% if already_completed %}
-        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
+        <div class="completed-notice">&#10003; 이미 완료한 단계입니다.</div>
+        <div class="chat-box" id="chat_1_6"></div>
+        <textarea id="answer_1_6" class="form-control" rows="3"
+                  placeholder="AI 튜터에게 추가 질문을 할 수 있습니다..."></textarea>
+        <div style="margin-top:10px;">
+            <button id="submit_1_6" class="btn btn-success"
+                    onclick="submitCheckpoint(1, 6, 'submit_1_6', 'chat_1_6', null)">추가 질문하기</button>
+        </div>
         <div class="step-nav">
             <a href="{{ url_for('student.stage1_step', step=5) }}" class="btn btn-secondary">← 이전</a>
             <a href="{{ url_for('student.stage1_quiz') }}" class="btn btn-primary">다음: 이해 확인 퀴즈 →</a>

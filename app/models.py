@@ -102,10 +102,17 @@ class ProjectIdea(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
     topic = db.Column(db.String(200))
+    interest_field = db.Column(db.Text)      # 관심 분야
+    problem_situation = db.Column(db.Text)   # 문제 상황
+    ml_problem = db.Column(db.Text)          # 기계학습으로 해결할 문제
+    current_state = db.Column(db.Text)       # 현재 상태
+    target_state = db.Column(db.Text)        # 목표 상태
+    key_elements = db.Column(db.Text)        # 핵심 요소
+    sub_problems = db.Column(db.Text)        # 작은 문제로 분해
     problem_statement = db.Column(db.Text)
     input_data = db.Column(db.String(500))
     output_target = db.Column(db.String(200))
-    ml_type = db.Column(db.String(50))           # regression / classification / clustering
+    ml_type = db.Column(db.String(50))
     ml_reason = db.Column(db.Text)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

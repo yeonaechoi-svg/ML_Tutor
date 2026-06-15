@@ -52,7 +52,14 @@
         <div class="checkpoint-question">{{ "다음 두 가지 질문에 답해보세요.\n\n1. 전통적인 프로그래밍과 기계학습의 차이를 자신의 말로 설명해보세요.\n2. 기계학습이 더 적합한 상황은 어떤 경우인지 실생활 예를 들어 설명해보세요." }}</div>
 
         {% if already_completed %}
-        <div class="checkpoint-feedback visible">이미 완료한 단계입니다. 다음 단계로 이동하세요.</div>
+        <div class="completed-notice">&#10003; 이미 완료한 단계입니다.</div>
+        <div class="chat-box" id="chat_1_2"></div>
+        <textarea id="answer_1_2" class="form-control" rows="3"
+                  placeholder="AI 튜터에게 추가 질문을 할 수 있습니다..."></textarea>
+        <div style="margin-top:10px;">
+            <button id="submit_1_2" class="btn btn-success"
+                    onclick="submitCheckpoint(1, 2, 'submit_1_2', 'chat_1_2', null)">추가 질문하기</button>
+        </div>
         <div class="step-nav">
             <a href="{{ url_for('student.stage1_step', step=1) }}" class="btn btn-secondary">← 이전</a>
             <a href="{{ url_for('student.stage1_step', step=3) }}" class="btn btn-primary">다음: 기계학습 유형 →</a>

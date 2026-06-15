@@ -11,10 +11,10 @@
         <a href="{{ href }}"
            style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700;
                   text-decoration:none; transition:all 0.15s; border:2px solid;
-                  {% if is_done %}
-                      background:#f0fdf4; color:#059669; border-color:#6ee7b7;
-                  {% elif is_active %}
+                  {% if is_active %}
                       background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+                  {% elif is_done %}
+                      background:#f0fdf4; color:#059669; border-color:#6ee7b7;
                   {% else %}
                       background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;
                   {% endif %}">
