@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}7단계 — 자기평가{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">7단계 — 자기평가 및 동료 평가</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'자기평가'),(2,'동료 평가')] %}
+        <a href="{{ url_for('student.stage7_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none;
+            {% if i == 1 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 1 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 수정하고 저장할 수 있습니다.</div>
+    {% endif %}
+
+    <div class="info-box" style="margin-bottom:24px;">
+        <strong>자기평가란?</strong><br>
+        프로젝트 전 과정을 돌아보며 자신이 얼마나 성장했는지 스스로 점검하는 시간입니다.<br>
+        솔직하게 평가해야 앞으로의 학습 방향을 잡는 데 도움이 됩니다.
+    </div>
+
+    <form method="POST" id="self-eval-form">
+        <div class="section">
+            <h3 class="section-title">자기평가 체크리스트</h3>
+            <p style="font-size:13px; color:#64748b; margin-bottom:20px;">
+                각 항목을 클릭하여 달성 여부를 표시해주세요.
+            </p>
+
+            {% for i, item in enumerate(checklist_items) %}
+            {% set checked = self_checked[i] if i < self_checked|length else false %}
+            <div id="citem_{{ i }}"
+                 data-checked="{{ '1' if checked else '0' }}"
+                 onclick="toggleItem({{ i }})"
+                 style="display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:12px; border:2px solid {{ '#6ee7b7' if checked else '#e2e8f0' }}; background:{{ '#f0fdf4' if checked else '#f8fafc' }}; cursor:pointer; margin-bottom:10px; transition:all 0.2s; user-select:none;">
+                <div id="check_icon_{{ i }}"
+                     style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; flex-shrink:0; background:{{ '#059669' if checked else '#e2e8f0' }}; color:{{ '#fff' if checked else '#94a3b8' }};">
+                    {{ '✓' if checked else '○' }}
+                </div>
+                <div style="font-size:14px; color:#1e293b; font-weight:500; flex:1;">{{ item }}</div>
+                <input type="hidden" name="item_{{ i }}" id="item_input_{{ i }}" value="{{ '1' if checked else '0' }}">
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="section">
+            <h3 class="section-title">프로젝트 총평</h3>
+            <div class="info-box" style="margin-bottom:14px;">
+                이번 프로젝트에서 가장 어려웠던 점과 가장 보람 있었던 점을 자유롭게 적어보세요.
+            </div>
+            <div class="form-group">
+                <textarea class="form-control" name="self_comment" rows="5"
+                          placeholder="예) 처음엔 데이터 전처리가 어려웠지만, 결측치를 직접 처리하면서 데이터의 중요성을 깨달았습니다. 모델이 83% 정확도를 달성했을 때 가장 뿌듯했습니다...">{{ idea.self_comment if idea and idea.self_comment else '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage6') }}" class="btn btn-secondary">← 6단계</a>
+            <button type="submit" class="btn btn-primary">자기평가 저장하고 동료 평가로 →</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleItem(i) {
+    var el = document.getElementById('citem_' + i);
+    var input = document.getElementById('item_input_' + i);
+    var icon = document.getElementById('check_icon_' + i);
+    var checked = el.getAttribute('data-checked') === '1';
+    if (checked) {
+        el.style.background = '#f8fafc';
+        el.style.borderColor = '#e2e8f0';
+        icon.textContent = '○';
+        icon.style.background = '#e2e8f0';
+        icon.style.color = '#94a3b8';
+        el.setAttribute('data-checked', '0');
+        input.value = '0';
+    } else {
+        el.style.background = '#f0fdf4';
+        el.style.borderColor = '#6ee7b7';
+        icon.textContent = '✓';
+        icon.style.background = '#059669';
+        icon.style.color = '#fff';
+        el.setAttribute('data-checked', '1');
+        input.value = '1';
+    }
+}
+</script>
+{% endblock %}

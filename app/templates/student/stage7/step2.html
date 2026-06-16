@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}7단계 — 동료 평가{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">7단계 — 자기평가 및 동료 평가</h2>
+
+    <!-- 진행 표시 -->
+    <div style="display:flex; gap:6px; margin-bottom:24px;">
+        {% for i, label in [(1,'자기평가'),(2,'동료 평가')] %}
+        <a href="{{ url_for('student.stage7_step', step=i) }}"
+           style="flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; border:2px solid; text-decoration:none;
+            {% if i == 2 %}background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; border-color:#4F46E5; box-shadow:0 2px 8px rgba(79,70,229,0.35);
+            {% elif i in completed %}background:#f0fdf4; color:#059669; border-color:#6ee7b7;
+            {% else %}background:#f8fafc; color:#94a3b8; border-color:#e2e8f0;{% endif %}">
+            {% if i in completed and i != 2 %}✓ {% endif %}{{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if already_completed %}
+    <div class="completed-notice">&#10003; 이미 완료한 단계입니다. 추가 평가를 작성할 수 있습니다.</div>
+    {% endif %}
+
+    <div class="info-box" style="margin-bottom:24px;">
+        <strong>동료 평가 안내</strong><br>
+        같은 반 친구들의 프로젝트를 체크리스트로 평가합니다.<br>
+        평가는 서로의 성장을 돕기 위한 것이므로, 솔직하고 건설적으로 작성해주세요.
+    </div>
+
+    <!-- 평가 현황 -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+        <div style="font-size:13px; color:#475569;">평가 현황:</div>
+        <div style="background:#4F46E5; color:#fff; border-radius:20px; padding:4px 14px; font-size:13px; font-weight:700;">
+            {{ reviewed_ids|length }} / {{ classmates|length }} 완료
+        </div>
+    </div>
+
+    <!-- 학생 목록 -->
+    {% if classmates %}
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:32px;">
+        {% for student in classmates %}
+        {% set student_idea = classmate_ideas.get(student.id) %}
+        {% set is_reviewed = student.id in reviewed_ids %}
+        <div style="display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:12px; border:1.5px solid {{ '#d1fae5' if is_reviewed else '#e2e8f0' }}; background:{{ '#f0fdf4' if is_reviewed else '#fff' }};">
+            <!-- 상태 배지 -->
+            <div style="flex-shrink:0; width:60px; text-align:center;">
+                {% if is_reviewed %}
+                <span style="background:#059669; color:#fff; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700;">완료</span>
+                {% else %}
+                <span style="background:#f1f5f9; color:#64748b; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700;">미평가</span>
+                {% endif %}
+            </div>
+            <!-- 학생 정보 -->
+            <div style="flex:1;">
+                <div style="font-size:14px; font-weight:700; color:#1e293b;">{{ student.name }}</div>
+                <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                    {% if student_idea and student_idea.topic %}
+                    {{ student_idea.topic }}
+                    {% else %}
+                    <span style="color:#94a3b8;">주제 미입력</span>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- 평가 버튼 -->
+            <a href="{{ url_for('student.stage7_peer_review', reviewee_id=student.id) }}"
+               style="flex-shrink:0; background:{% if is_reviewed %}#f8fafc{% else %}linear-gradient(135deg,#4F46E5,#7C3AED){% endif %}; color:{% if is_reviewed %}#475569{% else %}#fff{% endif %}; border:1.5px solid {% if is_reviewed %}#e2e8f0{% else %}#4F46E5{% endif %}; border-radius:8px; padding:7px 16px; font-size:13px; font-weight:600; text-decoration:none;">
+                {% if is_reviewed %}수정하기{% else %}평가하기{% endif %}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:40px; color:#94a3b8; font-size:14px;">
+        같은 반 친구가 없습니다.
+    </div>
+    {% endif %}
+
+    <!-- 완료 버튼 -->
+    <form method="POST">
+        <div style="border-top:1px solid #e2e8f0; padding-top:24px; display:flex; justify-content:space-between; align-items:center;">
+            <a href="{{ url_for('student.stage7_step', step=1) }}" class="btn btn-secondary">← 자기평가</a>
+            <div style="display:flex; align-items:center; gap:12px;">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div style="font-size:13px; color:#059669; font-weight:600;">✓ {{ message }}</div>
+                {% endfor %}
+                {% endwith %}
+                <button type="submit" class="btn btn-primary" style="padding:12px 28px; font-size:15px;">
+                    {% if already_completed %}✓ 7단계 완료{% else %}동료 평가 완료 →{% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

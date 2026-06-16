@@ -32,6 +32,7 @@
                     <a href="{{ url_for('teacher.upload') }}">학생 등록</a>
                 {% else %}
                     <a href="{{ url_for('student.dashboard') }}">학습 현황</a>
+                    <a href="{{ url_for('student.gallery') }}">반 갤러리</a>
                 {% endif %}
                 <a href="{{ url_for('auth.logout') }}" class="nav-logout">로그아웃</a>
             {% else %}
@@ -56,7 +57,7 @@
         (4, '기계학습 유형과 알고리즘 선정', 'student.stage4', true),
         (5, '기계학습을 통한 모델 생성',     'student.stage5', true),
         (6, '성능평가 및 예측',              'student.stage6', true),
-        (7, '자기평가 및 동료 평가',         none,             false)
+        (7, '자기평가 및 동료 평가',         'student.stage7', true)
     ] %}
     <aside class="stage-sidebar">
         <div class="stage-sidebar-title">학습 단계</div>

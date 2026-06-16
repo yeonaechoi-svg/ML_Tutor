@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}동료 평가 — {{ reviewee.name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
+        <a href="{{ url_for('student.stage7_step', step=2) }}" style="color:#6366F1; text-decoration:none; font-size:13px;">← 동료 평가 목록</a>
+    </div>
+
+    <h2 class="card-title">동료 평가 — {{ reviewee.name }}</h2>
+
+    <!-- 피평가자 프로젝트 요약 -->
+    <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:18px 20px; margin-bottom:28px;">
+        <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:12px;">📋 프로젝트 요약</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px;">
+            <div>
+                <span style="color:#64748b;">반 · 이름</span><br>
+                <span style="font-weight:600; color:#1e293b;">{{ reviewee.class_name }} · {{ reviewee.name }}</span>
+            </div>
+            <div>
+                <span style="color:#64748b;">프로젝트 주제</span><br>
+                <span style="font-weight:600; color:#1e293b;">
+                    {% if reviewee_idea and reviewee_idea.topic %}{{ reviewee_idea.topic }}{% else %}<span style="color:#94a3b8;">미입력</span>{% endif %}
+                </span>
+            </div>
+            <div>
+                <span style="color:#64748b;">사용 알고리즘</span><br>
+                <span style="font-weight:600; color:#1e293b;">
+                    {% if reviewee_idea and reviewee_idea.algorithm %}
+                        {% if reviewee_idea.algorithm == 'linear_regression' %}선형 회귀
+                        {% elif reviewee_idea.algorithm == 'decision_tree' %}의사결정 트리
+                        {% elif reviewee_idea.algorithm == 'random_forest' %}랜덤 포레스트
+                        {% elif reviewee_idea.algorithm == 'knn' %}KNN
+                        {% elif reviewee_idea.algorithm == 'kmeans' %}K-평균
+                        {% else %}{{ reviewee_idea.algorithm }}{% endif %}
+                    {% else %}<span style="color:#94a3b8;">미입력</span>{% endif %}
+                </span>
+            </div>
+            <div>
+                <span style="color:#64748b;">모델 성능 점수</span><br>
+                <span style="font-weight:600; color:#1e293b;">
+                    {% if reviewee_idea and reviewee_idea.model_score %}{{ reviewee_idea.model_score }}{% else %}<span style="color:#94a3b8;">미입력</span>{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 평가 폼 -->
+    <form method="POST">
+        <div class="section">
+            <h3 class="section-title">평가 체크리스트</h3>
+            <p style="font-size:13px; color:#64748b; margin-bottom:20px;">
+                각 항목을 클릭하여 해당 여부를 표시해주세요.
+            </p>
+
+            {% for i, item in enumerate(checklist_items) %}
+            {% set checked = peer_checked[i] if i < peer_checked|length else false %}
+            <div id="pcitem_{{ i }}"
+                 data-checked="{{ '1' if checked else '0' }}"
+                 onclick="togglePeerItem({{ i }})"
+                 style="display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:12px; border:2px solid {{ '#6ee7b7' if checked else '#e2e8f0' }}; background:{{ '#f0fdf4' if checked else '#f8fafc' }}; cursor:pointer; margin-bottom:10px; transition:all 0.2s; user-select:none;">
+                <div id="pcheck_icon_{{ i }}"
+                     style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; flex-shrink:0; background:{{ '#059669' if checked else '#e2e8f0' }}; color:{{ '#fff' if checked else '#94a3b8' }};">
+                    {{ '✓' if checked else '○' }}
+                </div>
+                <div style="font-size:14px; color:#1e293b; font-weight:500; flex:1;">{{ item }}</div>
+                <input type="hidden" name="pitem_{{ i }}" id="pitem_input_{{ i }}" value="{{ '1' if checked else '0' }}">
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="section">
+            <h3 class="section-title">한 줄 의견 (선택)</h3>
+            <div class="form-group">
+                <textarea class="form-control" name="peer_comment" rows="3"
+                          placeholder="친구 프로젝트에 대한 건설적인 의견을 남겨보세요. (선택 사항)">{{ peer_comment }}</textarea>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <a href="{{ url_for('student.stage7_step', step=2) }}" class="btn btn-secondary">← 목록으로</a>
+            <button type="submit" class="btn btn-primary">평가 저장 →</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePeerItem(i) {
+    var el = document.getElementById('pcitem_' + i);
+    var input = document.getElementById('pitem_input_' + i);
+    var icon = document.getElementById('pcheck_icon_' + i);
+    var checked = el.getAttribute('data-checked') === '1';
+    if (checked) {
+        el.style.background = '#f8fafc';
+        el.style.borderColor = '#e2e8f0';
+        icon.textContent = '○';
+        icon.style.background = '#e2e8f0';
+        icon.style.color = '#94a3b8';
+        el.setAttribute('data-checked', '0');
+        input.value = '0';
+    } else {
+        el.style.background = '#f0fdf4';
+        el.style.borderColor = '#6ee7b7';
+        icon.textContent = '✓';
+        icon.style.background = '#059669';
+        icon.style.color = '#fff';
+        el.setAttribute('data-checked', '1');
+        input.value = '1';
+    }
+}
+</script>
+{% endblock %}

@@ -1,11 +1,12 @@
 from flask import render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_required, current_user
 from app.teacher import teacher_bp
-from app.models import User, Progress, QuizResult
+from app.models import User, Progress, QuizResult, PeerReview, ProjectIdea
 from app import db
 from werkzeug.utils import secure_filename
 import openpyxl
 import os
+import json
 
 
 def teacher_required(f):
@@ -177,6 +178,102 @@ def upload():
         return redirect(url_for('teacher.students'))
 
     return render_template('teacher/upload.html')
+
+
+@teacher_bp.route('/student/<int:student_id>')
+@login_required
+@teacher_required
+def student_detail(student_id):
+    student = User.query.get_or_404(student_id)
+    if student.role != 'student':
+        return redirect(url_for('teacher.students'))
+
+    # 진도 정보
+    completed = Progress.query.filter_by(
+        user_id=student.id, status='completed'
+    ).order_by(Progress.stage.desc(), Progress.substep.desc()).first()
+    current_stage = completed.stage if completed else 0
+
+    quiz = QuizResult.query.filter_by(
+        user_id=student.id, stage=1
+    ).order_by(QuizResult.created_at.desc()).first()
+
+    # 프로젝트 아이디어
+    idea = ProjectIdea.query.filter_by(user_id=student.id).first()
+
+    # 자기평가 파싱
+    self_checked = []
+    if idea and idea.self_checklist:
+        try:
+            self_checked = json.loads(idea.self_checklist)
+        except Exception:
+            pass
+
+    # 받은 동료 평가
+    reviews_received = PeerReview.query.filter_by(reviewee_id=student.id).all()
+
+    parsed_reviews = []
+    for r in reviews_received:
+        reviewer = User.query.get(r.reviewer_id)
+        try:
+            data = json.loads(r.checklist_json)
+            items = data.get('items', [])
+            comment = data.get('comment', '')
+            score = sum(1 for v in items if v)
+        except Exception:
+            items, comment, score = [], '', 0
+        parsed_reviews.append({
+            'reviewer': reviewer,
+            'checks': items,
+            'comment': comment,
+            'score': score,
+        })
+
+    # 평균 점수 및 항목별 동의율
+    n = len(parsed_reviews)
+    avg_score = round(sum(r['score'] for r in parsed_reviews) / n, 2) if n else None
+    item_agree = []
+    if n:
+        for i in range(5):
+            agree_count = sum(1 for r in parsed_reviews if i < len(r['checks']) and r['checks'][i])
+            item_agree.append(round(agree_count / n * 100))
+
+    # 내가 한 동료 평가 수
+    given_count = PeerReview.query.filter_by(reviewer_id=student.id).count()
+
+    SELF_ITEMS = [
+        "프로젝트 주제와 기계학습 유형을 적절히 연결했다",
+        "데이터 수집과 전처리 과정을 이해하며 진행했다",
+        "알고리즘 선택 이유를 논리적으로 설명할 수 있다",
+        "모델 훈련과 성능 평가 코드를 직접 작성했다",
+        "성능 결과의 의미를 스스로 해석할 수 있다",
+        "전체 프로젝트 과정을 처음부터 다시 설명할 수 있다",
+    ]
+    PEER_ITEMS = [
+        "프로젝트 주제가 명확하고 기계학습으로 해결 가능하다",
+        "데이터와 알고리즘 선택이 주제에 적합하다",
+        "모델 성능이 프로젝트 목적에 비추어 합리적이다",
+        "결과 해석이 논리적이고 이해하기 쉽다",
+        "전반적으로 프로젝트가 성실하게 수행되었다",
+    ]
+
+    return render_template(
+        'teacher/student_detail.html',
+        student=student,
+        current_stage=current_stage,
+        quiz=quiz,
+        idea=idea,
+        self_items=SELF_ITEMS,
+        self_checked=self_checked,
+        peer_items=PEER_ITEMS,
+        reviews_received=parsed_reviews,
+        avg_score=avg_score,
+        item_agree=item_agree,
+        given_count=given_count,
+        total_classmates=User.query.filter_by(
+            class_name=student.class_name, role='student'
+        ).filter(User.id != student.id).count(),
+    )
 
 
 @teacher_bp.route('/reset-password/<int:user_id>', methods=['POST'])

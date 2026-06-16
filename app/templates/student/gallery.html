@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}반 갤러리{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px; font-weight:800; color:#1e293b; margin-bottom:4px;">{{ current_user.class_name }} 프로젝트 갤러리</h1>
+        <p style="font-size:13px; color:#64748b;">우리 반 친구들의 기계학습 프로젝트를 확인해보세요.</p>
+    </div>
+    <span style="background:#eef2ff; color:#4F46E5; border-radius:20px; padding:6px 16px; font-size:13px; font-weight:700;">{{ cards|length }}명</span>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+    {% for card in cards %}
+    {% set u = card.user %}
+    {% set idea = card.idea %}
+    {% set stage = card.current_stage %}
+    {% set is_me = u.id == current_user.id %}
+
+    <div style="background:#fff; border:1.5px solid {% if is_me %}#a5b4fc{% else %}#e2e8f0{% endif %}; border-radius:16px; overflow:hidden; transition:box-shadow 0.2s;"
+         onmouseover="this.style.boxShadow='0 4px 20px rgba(79,70,229,0.12)'" onmouseout="this.style.boxShadow='none'">
+
+        <!-- 카드 헤더 -->
+        <div style="padding:16px 18px 12px; background:{% if is_me %}#eef2ff{% else %}#f8fafc{% endif %}; border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#4F46E5,#7C3AED); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:#fff; flex-shrink:0;">
+                    {{ u.name[0] }}
+                </div>
+                <div>
+                    <div style="font-size:15px; font-weight:800; color:#1e293b;">
+                        {{ u.name }}{% if is_me %} <span style="font-size:11px; color:#6366F1; font-weight:600;">(나)</span>{% endif %}
+                    </div>
+                    <div style="font-size:11px; color:#64748b;">{{ u.class_name }} · {{ u.student_id }}</div>
+                </div>
+                <div style="margin-left:auto;">
+                    {% if stage >= 6 %}
+                        <span style="background:#dcfce7; color:#166534; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700;">{{ stage }}단계 완료</span>
+                    {% elif stage > 0 %}
+                        <span style="background:#eef2ff; color:#4F46E5; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700;">{{ stage }}단계 진행 중</span>
+                    {% else %}
+                        <span style="background:#f1f5f9; color:#94a3b8; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700;">미시작</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 카드 내용 -->
+        <div style="padding:14px 18px 16px;">
+            <!-- 주제 -->
+            <div style="margin-bottom:12px;">
+                <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">프로젝트 주제</div>
+                <div style="font-size:13px; font-weight:600; color:#1e293b; line-height:1.5;">
+                    {% if idea and idea.topic %}{{ idea.topic }}
+                    {% else %}<span style="color:#cbd5e1;">미입력</span>{% endif %}
+                </div>
+            </div>
+
+            <!-- 알고리즘 + 성능 -->
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+                <div style="flex:1; background:#f8fafc; border-radius:8px; padding:8px 10px; border:1px solid #e2e8f0;">
+                    <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-bottom:3px;">알고리즘</div>
+                    <div style="font-size:12px; font-weight:700; color:#374151;">
+                        {% if idea and idea.algorithm %}{{ algo_labels.get(idea.algorithm, idea.algorithm) }}
+                        {% else %}<span style="color:#cbd5e1;">미선택</span>{% endif %}
+                    </div>
+                </div>
+                <div style="flex:1; background:#f8fafc; border-radius:8px; padding:8px 10px; border:1px solid #e2e8f0;">
+                    <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-bottom:3px;">모델 성능</div>
+                    <div style="font-size:12px; font-weight:700; color:{% if idea and idea.model_score %}#059669{% else %}#cbd5e1{% endif %};">
+                        {{ idea.model_score if idea and idea.model_score else '미입력' }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 결과 해석 미리보기 -->
+            {% if idea and idea.result_interpretation %}
+            <div style="font-size:12px; color:#475569; line-height:1.6; background:#f8fafc; border-radius:8px; padding:8px 10px; margin-bottom:14px; border:1px solid #e2e8f0;">
+                {{ idea.result_interpretation[:80] }}{% if idea.result_interpretation|length > 80 %}...{% endif %}
+            </div>
+            {% endif %}
+
+            <!-- 자세히 보기 버튼 -->
+            <a href="{{ url_for('student.student_result', student_id=u.id) }}"
+               style="display:block; text-align:center; padding:9px; background:{% if is_me %}linear-gradient(135deg,#4F46E5,#7C3AED){% else %}#f8fafc{% endif %}; color:{% if is_me %}#fff{% else %}#4F46E5{% endif %}; border:1.5px solid {% if is_me %}#4F46E5{% else %}#c7d2fe{% endif %}; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none;">
+                {% if is_me %}내 결과물 보기{% else %}자세히 보기{% endif %}
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

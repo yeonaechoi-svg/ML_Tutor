@@ -1,9 +1,28 @@
 from flask import render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
 from app.student import student_bp
-from app.models import Progress, QuizResult, ProjectIdea, User
+from app.models import Progress, QuizResult, ProjectIdea, User, PeerReview
 from app import db
 from datetime import datetime
+import json
+
+
+SELF_CHECKLIST_ITEMS = [
+    "프로젝트 주제와 기계학습 유형을 적절히 연결했다",
+    "데이터 수집과 전처리 과정을 이해하며 진행했다",
+    "알고리즘 선택 이유를 논리적으로 설명할 수 있다",
+    "모델 훈련과 성능 평가 코드를 직접 작성했다",
+    "성능 결과의 의미를 스스로 해석할 수 있다",
+    "전체 프로젝트 과정을 처음부터 다시 설명할 수 있다",
+]
+
+PEER_CHECKLIST_ITEMS = [
+    "프로젝트 주제가 명확하고 기계학습으로 해결 가능하다",
+    "데이터와 알고리즘 선택이 주제에 적합하다",
+    "모델 성능이 프로젝트 목적에 비추어 합리적이다",
+    "결과 해석이 논리적이고 이해하기 쉽다",
+    "전반적으로 프로젝트가 성실하게 수행되었다",
+]
 
 
 def save_progress(stage, substep, status='completed'):
@@ -34,6 +53,61 @@ def get_completed_substeps(stage):
     return {r.substep for r in rows}
 
 
+ALGO_LABELS = {
+    'linear_regression': '선형 회귀',
+    'decision_tree': '의사결정 트리',
+    'random_forest': '랜덤 포레스트',
+    'knn': 'KNN',
+    'kmeans': 'K-평균',
+}
+
+
+@student_bp.route('/gallery')
+@login_required
+def gallery():
+    classmates = User.query.filter_by(
+        class_name=current_user.class_name, role='student'
+    ).order_by(User.student_id).all()
+
+    cards = []
+    for u in classmates:
+        idea = ProjectIdea.query.filter_by(user_id=u.id).first()
+        completed = Progress.query.filter_by(
+            user_id=u.id, status='completed'
+        ).order_by(Progress.stage.desc(), Progress.substep.desc()).first()
+        current_stage = completed.stage if completed else 0
+        cards.append({
+            'user': u,
+            'idea': idea,
+            'current_stage': current_stage,
+        })
+
+    return render_template('student/gallery.html', cards=cards, algo_labels=ALGO_LABELS)
+
+
+@student_bp.route('/result/<int:student_id>')
+@login_required
+def student_result(student_id):
+    student = User.query.get_or_404(student_id)
+    if student.role != 'student':
+        return redirect(url_for('student.gallery'))
+
+    idea = ProjectIdea.query.filter_by(user_id=student_id).first()
+    completed = Progress.query.filter_by(
+        user_id=student_id, status='completed'
+    ).order_by(Progress.stage.desc(), Progress.substep.desc()).first()
+    current_stage = completed.stage if completed else 0
+
+    return render_template(
+        'student/result.html',
+        student=student,
+        idea=idea,
+        current_stage=current_stage,
+        algo_labels=ALGO_LABELS,
+        is_own=(student_id == current_user.id),
+    )
+
+
 @student_bp.route('/dashboard')
 @login_required
 def dashboard():
@@ -43,10 +117,15 @@ def dashboard():
     completed_s4 = get_completed_substeps(4)
     completed_s5 = get_completed_substeps(5)
     completed_s6 = get_completed_substeps(6)
+    completed_s7 = get_completed_substeps(7)
     quiz_result = QuizResult.query.filter_by(
         user_id=current_user.id, stage=1
     ).order_by(QuizResult.created_at.desc()).first()
     idea = ProjectIdea.query.filter_by(user_id=current_user.id).first()
+    peer_review_count = PeerReview.query.filter_by(reviewer_id=current_user.id).count()
+    total_classmates = User.query.filter_by(
+        class_name=current_user.class_name, role='student'
+    ).filter(User.id != current_user.id).count()
 
     s1_done = len(completed_s1) >= 7
     s2_done = len(completed_s2) >= 3
@@ -54,7 +133,10 @@ def dashboard():
     s4_done = len(completed_s4) >= 2
     s5_done = len(completed_s5) >= 3
     s6_done = len(completed_s6) >= 3
-    if s6_done:
+    s7_done = len(completed_s7) >= 2
+    if s7_done:
+        current_stage = 7
+    elif s6_done:
         current_stage = 7
     elif s5_done:
         current_stage = 6
@@ -78,9 +160,12 @@ def dashboard():
         completed_s4=completed_s4,
         completed_s5=completed_s5,
         completed_s6=completed_s6,
+        completed_s7=completed_s7,
         current_stage=current_stage,
         quiz_result=quiz_result,
-        idea=idea
+        idea=idea,
+        peer_review_count=peer_review_count,
+        total_classmates=total_classmates,
     )
 
 
@@ -584,4 +669,131 @@ def stage3_step(step):
         completed=completed,
         already_completed=(step in completed),
         idea=idea
+    )
+
+
+# ── 7단계: 자기평가 및 동료 평가 ──
+
+@student_bp.route('/stage7')
+@login_required
+def stage7():
+    completed = get_completed_substeps(7)
+    if 1 not in completed:
+        return redirect(url_for('student.stage7_step', step=1))
+    return redirect(url_for('student.stage7_step', step=2))
+
+
+@student_bp.route('/stage7/step/<int:step>', methods=['GET', 'POST'])
+@login_required
+def stage7_step(step):
+    if step not in (1, 2):
+        return redirect(url_for('student.stage7_step', step=1))
+
+    completed = get_completed_substeps(7)
+    idea = ProjectIdea.query.filter_by(user_id=current_user.id).first()
+
+    if step == 1:
+        if request.method == 'POST':
+            try:
+                if not idea:
+                    idea = ProjectIdea(user_id=current_user.id)
+                    db.session.add(idea)
+                items = [request.form.get(f'item_{i}', '0') == '1' for i in range(6)]
+                idea.self_checklist = json.dumps(items)
+                idea.self_comment = request.form.get('self_comment', '').strip()
+                save_progress(7, 1)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+            return redirect(url_for('student.stage7_step', step=2))
+
+        self_checked = [False] * 6
+        if idea and idea.self_checklist:
+            try:
+                self_checked = json.loads(idea.self_checklist)
+            except Exception:
+                pass
+
+        return render_template(
+            'student/stage7/step1.html',
+            step=1, completed=completed,
+            already_completed=(1 in completed),
+            idea=idea,
+            checklist_items=SELF_CHECKLIST_ITEMS,
+            self_checked=self_checked,
+        )
+
+    else:  # step == 2
+        if request.method == 'POST':
+            save_progress(7, 2)
+            db.session.commit()
+            flash('모든 단계를 완료했습니다! 수고했어요.', 'success')
+            return redirect(url_for('student.dashboard'))
+
+        classmates = User.query.filter_by(
+            class_name=current_user.class_name, role='student'
+        ).filter(User.id != current_user.id).order_by(User.student_id).all()
+
+        existing_reviews = PeerReview.query.filter_by(reviewer_id=current_user.id).all()
+        reviewed_ids = {r.reviewee_id for r in existing_reviews}
+
+        classmate_ideas = {u.id: ProjectIdea.query.filter_by(user_id=u.id).first() for u in classmates}
+
+        return render_template(
+            'student/stage7/step2.html',
+            step=2, completed=completed,
+            already_completed=(2 in completed),
+            classmates=classmates,
+            reviewed_ids=reviewed_ids,
+            classmate_ideas=classmate_ideas,
+        )
+
+
+@student_bp.route('/stage7/peer/<int:reviewee_id>', methods=['GET', 'POST'])
+@login_required
+def stage7_peer_review(reviewee_id):
+    reviewee = User.query.get_or_404(reviewee_id)
+    if reviewee.class_name != current_user.class_name or reviewee.id == current_user.id:
+        return redirect(url_for('student.stage7_step', step=2))
+
+    reviewee_idea = ProjectIdea.query.filter_by(user_id=reviewee_id).first()
+    existing = PeerReview.query.filter_by(
+        reviewer_id=current_user.id, reviewee_id=reviewee_id
+    ).first()
+
+    if request.method == 'POST':
+        try:
+            items = [request.form.get(f'pitem_{i}', '0') == '1' for i in range(5)]
+            comment = request.form.get('peer_comment', '').strip()
+            checklist_data = json.dumps({'items': items, 'comment': comment})
+            if existing:
+                existing.checklist_json = checklist_data
+            else:
+                db.session.add(PeerReview(
+                    reviewer_id=current_user.id,
+                    reviewee_id=reviewee_id,
+                    checklist_json=checklist_data
+                ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        return redirect(url_for('student.stage7_step', step=2))
+
+    peer_checked = [False] * 5
+    peer_comment = ''
+    if existing:
+        try:
+            data = json.loads(existing.checklist_json)
+            peer_checked = data.get('items', [False] * 5)
+            peer_comment = data.get('comment', '')
+        except Exception:
+            pass
+
+    return render_template(
+        'student/stage7/peer_review.html',
+        reviewee=reviewee,
+        reviewee_idea=reviewee_idea,
+        checklist_items=PEER_CHECKLIST_ITEMS,
+        peer_checked=peer_checked,
+        peer_comment=peer_comment,
     )

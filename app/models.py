@@ -134,6 +134,9 @@ class ProjectIdea(db.Model):
     # 6단계: 성능 평가 및 예측
     model_score = db.Column(db.String(100))      # 모델 성능 점수
     result_interpretation = db.Column(db.Text)   # 결과 해석 텍스트
+    # 7단계: 자기평가
+    self_checklist = db.Column(db.Text)          # JSON 배열 (bool 6개)
+    self_comment = db.Column(db.Text)            # 총평
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('project_idea', uselist=False))
